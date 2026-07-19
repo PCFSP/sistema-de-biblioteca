@@ -57,6 +57,123 @@ function alternarFormUsuario(exibir) {
     }
 }
 
+function alternarAbaUsuarios(subtela, btnAtivo) {
+    document.querySelectorAll('.subtela-usuarios').forEach(tela => {
+        tela.style.display = 'none';
+    });
+
+    const telaAlvo = document.getElementById('subtela-' + subtela);
+    if (telaAlvo) {
+        telaAlvo.style.display = 'block';
+    }
+
+    document.querySelectorAll('.btn-subnav').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    if (btnAtivo) {
+        btnAtivo.classList.add('active');
+    }
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+/* ==========================================================================
+   1.1 FUNÇÕES DA TELA DE LOGIN / SOLICITAR CADASTRO (login.html)
+   ========================================================================== */
+function mostrarTelaLogin(destino) {
+    const mapa = {
+        login: { el: document.getElementById('tela-login'), display: 'block' },
+        cadastro: { el: document.getElementById('tela-cadastro'), display: 'block' },
+        esqueci: { el: document.getElementById('tela-esqueci-senha'), display: 'flex' }
+    };
+
+    Object.values(mapa).forEach(item => {
+        if (item.el) item.el.style.display = 'none';
+    });
+
+    const alvo = mapa[destino] || mapa.login;
+    if (alvo.el) {
+        alvo.el.style.display = alvo.display;
+    }
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+/* ==========================================================================
+   1.2 MENU DE PERFIL DO USUÁRIO (dropdown + modal "Meu Perfil")
+   ========================================================================== */
+function toggleMenuPerfil(event) {
+    if (event) event.stopPropagation();
+
+    const dropdown = document.getElementById('dropdown-perfil');
+    if (!dropdown) return;
+
+    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+}
+
+document.addEventListener('click', function(event) {
+    const menu = document.querySelector('.user-menu');
+    const dropdown = document.getElementById('dropdown-perfil');
+
+    if (menu && dropdown && dropdown.style.display === 'block' && !menu.contains(event.target)) {
+        dropdown.style.display = 'none';
+    }
+});
+
+function abrirModalPerfil(aba) {
+    const dropdown = document.getElementById('dropdown-perfil');
+    if (dropdown) {
+        dropdown.style.display = 'none';
+    }
+
+    const overlay = document.getElementById('modal-overlay-perfil');
+    if (overlay) {
+        overlay.style.display = 'flex';
+    }
+
+    const btnAlvo = document.getElementById(aba === 'senha' ? 'tab-perfil-senha' : 'tab-perfil-informacoes');
+    alternarAbaPerfil(aba, btnAlvo);
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+function fecharModalPerfil() {
+    const overlay = document.getElementById('modal-overlay-perfil');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+}
+
+function alternarAbaPerfil(aba, btnAtivo) {
+    document.querySelectorAll('.subaba-perfil').forEach(el => {
+        el.style.display = 'none';
+    });
+
+    const alvo = document.getElementById('subaba-perfil-' + aba);
+    if (alvo) {
+        alvo.style.display = 'block';
+    }
+
+    document.querySelectorAll('.btn-tab-perfil').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    if (btnAtivo) {
+        btnAtivo.classList.add('active');
+    }
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
 /* ==========================================================================
    2. FUNÇÕES DE NAVEGAÇÃO DO LEITOR (index_leitor.html)
    ========================================================================== */
@@ -67,14 +184,11 @@ function navegarLeitor(destino) {
     const btnBuscar = document.getElementById('btn-nav-buscar');
     const titulo = document.getElementById('titulo-pagina');
 
-    // Valida se os elementos existem na página antes de executar
     if (!abaPainel || !abaBuscar || !btnPainel || !btnBuscar) return;
 
-    // Oculta as abas
     abaPainel.style.display = 'none';
     abaBuscar.style.display = 'none';
 
-    // Controla a visibilidade, títulos e as classes ativas do menu
     if (destino === 'painel') {
         abaPainel.style.display = 'block';
         btnPainel.classList.add('active');
@@ -87,7 +201,6 @@ function navegarLeitor(destino) {
         if (titulo) titulo.innerText = 'Buscar Livros';
     }
 
-    // Renderiza novamente os ícones do Lucide na nova aba do leitor
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
@@ -128,7 +241,7 @@ function toggleTheme() {
     atualizarIconeTema(targetTheme);
 }
 
-function actualizarIconeTema(tema) {
+function atualizarIconeTema(tema) {
     const icon = document.getElementById('theme-icon');
     if (!icon) return; 
     
