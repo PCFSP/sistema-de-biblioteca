@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca - Painel do Administrador</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+    <div class="admin-layout">
+        
+        <!-- ================= BARRA LATERAL (SIDEBAR) ================= -->
+        <aside class="sidebar">
+            <div>
+                <div class="nav-brand">
+                    <i data-lucide="book-open"></i> 
+                    <text>Biblioteca</text>
+                </div>
+
+                <!-- Novo badge do Administrador -->
+                <div class="role-badge admin">
+                    <i data-lucide="shield"></i>
+                    <text>Administrador</text>
+                </div>
+                
+                <ul class="sidebar-menu">
+                    <li class="sidebar-item active" data-tela="dashboard">
+                        <a href="javascript:void(0)" onclick="navegar('dashboard')">
+                            <i data-lucide="layout-dashboard"></i> <text>Dashboard</text>
+                        </a>
+                    </li>
+                    <li class="sidebar-item" data-tela="acervo">
+                        <a href="javascript:void(0)" onclick="navegar('acervo')">
+                            <i data-lucide="book-open"></i> <text>Acervo</text>
+                        </a>
+                    </li>
+                    <li class="sidebar-item" data-tela="emprestimos">
+                        <a href="javascript:void(0)" onclick="navegar('emprestimos')">
+                            <i data-lucide="refresh-cw"></i> <text>Empréstimos</text>
+                        </a>
+                    </li>
+                    <li class="sidebar-item" data-tela="devolucoes">
+                        <a href="javascript:void(0)" onclick="navegar('devolucoes')">
+                            <i data-lucide="undo-2"></i> <text>Devoluções</text>
+                        </a>
+                    </li>
+                    <li class="sidebar-item" data-tela="reservas">
+                        <a href="javascript:void(0)" onclick="navegar('reservas')">
+                            <i data-lucide="bookmark"></i> <text>Reservas</text>
+                        </a>
+                    </li>
+                    <li class="sidebar-item" data-tela="usuarios">
+                        <a href="javascript:void(0)" onclick="navegar('usuarios')">
+                            <i data-lucide="users"></i> <text>Usuários</text>
+                        </a>
+                    </li>
+                    <li class="sidebar-item" data-tela="relatorios">
+                        <a href="javascript:void(0)" onclick="navegar('relatorios')">
+                            <i data-lucide="trending-up"></i> <text>Relatórios</text>
+                        </a>
+                    </li>
+                    <li class="sidebar-item" data-tela="configuracoes">
+                        <a href="javascript:void(0)" onclick="navegar('configuracoes')">
+                            <i data-lucide="settings"></i> <text>Configurações</text>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="sidebar-footer">
+                <a href="javascript:void(0)" id="btn-recolher" class="btn-collapse" onclick="toggleSidebar()">
+                    <i data-lucide="menu"></i> <text>Recolher menu</text>
+                </a>
+                <a href="login.html" class="btn-logout">
+                    <i data-lucide="log-out"></i> <text>Sair</text>
+                </a>
+            </div>
+        </aside>
+
+        <!-- ================= MAIN ================= -->
+        <main class="main-dashboard">
+            
+            <!-- Cabeçalho Dinâmico Superior -->
+            <header class="dashboard-header">
+                <h2 id="titulo-pagina">Dashboard</h2>
+                
+                <div class="header-profile">
+                    <!-- Novo botão do Modo Noturno -->
+                    <button class="btn-theme-toggle" onclick="toggleTheme()" title="Alternar Tema">
+                        <i data-lucide="sun" id="theme-icon"></i>
+                    </button>
+                    
+                    <button class="action-icon btn-notification">
+                        <i data-lucide="bell"></i>
+                        <span class="notification-badge"></span>
+                    </button>
+                    <div class="avatar-circle">FR</div>
+                </div>
+            </header>
+
+            <!-- ================= TELA: DASHBOARD ================= -->
+            <div id="tela-dashboard" class="aba-conteudo">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-card-header">
+                            <div class="metric-value">120</div>
+                            <i data-lucide="book" class="icon-success"></i>
+                        </div>
+                        <div class="metric-label">Total de Livros</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-card-header">
+                            <div class="metric-value">14</div>
+                            <i data-lucide="refresh-cw" class="icon-success"></i>
+                        </div>
+                        <div class="metric-label">Empréstimos Ativos</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-card-header">
+                            <div class="metric-value">3</div>
+                            <i data-lucide="alert-triangle" class="icon-danger"></i>
+                        </div>
+                        <div class="metric-label">Devoluções Atrasadas</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-card-header">
+                            <div class="metric-value">48</div>
+                            <i data-lucide="users" class="icon-success"></i>
+                        </div>
+                        <div class="metric-label">Usuários Ativos</div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="section-card">
+                        <h3>Empréstimos Recentes</h3>
+                        <div class="list-item">
+                            <div><h4>Dom Casmurro</h4><p>Ana Beatriz Costa - devolução 15/07/2026</p></div>
+                            <span class="status-tag success">Em andamento</span>
+                        </div>
+                        <div class="list-item">
+                            <div><h4>Sagarana</h4><p>Pedro Henrique Santos - devolução 12/07/2026</p></div>
+                            <span class="status-tag danger">Atrasado</span>
+                        </div>
+                    </div>
+
+                    <div class="section-card">
+                        <h3>Alertas de Multa</h3>
+                        <div class="alert-card-danger">
+                            <div class="alert-row"><strong>Pedro H. Santos </strong><strong>R$ 7,50</strong></div>
+                            <p class="alert-subtitle">Sagarana — 5 dias de atraso</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TELA: ACERVO ================= -->
+            <div id="tela-acervo" class="aba-conteudo" style="display: none;">
+                <div class="table-controls">
+                    <input type="text" class="search-input" placeholder="Buscar por título ou autor...">
+                    
+                    <select class="select-filter">
+                        <option value="">Todos (Gêneros)</option>
+                        <option value="romance">Romance</option>
+                        <option value="literatura">Literatura</option>
+                        <option value="contos">Contos</option>
+                    </select>
+
+                    <select class="select-filter">
+                        <option value="">Todos (Status)</option>
+                        <option value="disponivel">Disponível</option>
+                        <option value="indisponivel">Indisponível</option>
+                    </select>
+
+                    <button class="btn-primary" onclick="navegar('novo-livro')">+ Novo Livro</button>
+                </div>
+
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr><th>Capa</th><th>Título</th><th>Autor</th><th>Gênero</th><th>ISBN</th><th>Qtd.</th><th>Disponível</th><th>Ações</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><div class="table-cover"></div></td>
+                                <td><strong>Dom Casmurro</strong></td>
+                                <td>Machado de Assis</td>
+                                <td><span class="book-tag">Romance</span></td>
+                                <td>978-85-359-0277-5</td>
+                                <td>4</td>
+                                <td><span class="status-tag success">2 disp.</span></td>
+                                <td>
+                                    <button class="action-icon" title="Editar"><i data-lucide="pencil" class="icon-small"></i></button>
+                                    <button class="action-icon btn-action-danger" title="Excluir"><i data-lucide="trash-2" class="icon-small"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ================= TELA: NOVO LIVRO ================= -->
+            <div id="tela-novo-livro" class="aba-conteudo" style="display: none;">
+                <a href="javascript:void(0)" class="btn-back" onclick="navegar('acervo')">〈 Voltar ao acervo</a>
+                <div class="form-container">
+                    <div class="section-card">
+                        <h3>Informações do Livro</h3>
+                        <div class="input-group"><label>Título</label><input type="text" placeholder="Ex: Dom Casmurro"></div>
+                        <div class="form-row">
+                            <div class="input-group"><label>Autor</label><input type="text" placeholder="Ex: Machado de Assis"></div>
+                            <div class="input-group"><label>Editora</label><input type="text" placeholder="Ex: Companhia das Letras"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="input-group"><label>Ano de Publicação</label><input type="text" placeholder="Ex: 2024"></div>
+                            <div class="input-group"><label>ISBN</label><input type="text" placeholder="978-XX-XXX-XXXX-X"></div>
+                        </div>
+                    </div>
+                    <div class="form-actions-right">
+                        <button type="button" class="btn-secondary" onclick="navegar('acervo')">Cancelar</button>
+                        <button type="button" class="btn-primary" onclick="navegar('acervo')">Salvar Livro</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TELA: DEVOLUÇÕES ================= -->
+            <div id="tela-devolucoes" class="aba-conteudo" style="display: none;">
+                <div class="table-controls">
+                    <input type="text" class="search-input" placeholder="Buscar por leitor ou livro devolvido...">
+                    <select class="select-filter">
+                        <option value="">Todos os períodos</option>
+                        <option value="hoje">Hoje</option>
+                        <option value="semana">Esta semana</option>
+                        <option value="mes">Este mês</option>
+                    </select>
+                </div>
+
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr><th>Leitor</th><th>Livro</th><th>Data Empréstimo</th><th>Data Devolução</th><th>Multa Aplicada</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Mariana Oliveira</td>
+                                <td>O Alquimista</td>
+                                <td>01/07/2026</td>
+                                <td>15/07/2026</td>
+                                <td><span class="status-tag success">Nenhuma</span></td>
+                            </tr>
+                            <tr>
+                                <td>Carlos Eduardo Lima</td>
+                                <td>1984</td>
+                                <td>20/06/2026</td>
+                                <td>10/07/2026</td>
+                                <td><span class="status-tag danger">R$ 9,00 (Paga)</span></td>
+                            </tr>
+                            <tr>
+                                <td>Ana Beatriz Costa</td>
+                                <td>A Hora da Estrela</td>
+                                <td>05/07/2026</td>
+                                <td>18/07/2026</td>
+                                <td><span class="status-tag success">Nenhuma</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ================= TELA: EMPRÉSTIMOS ================= -->
+            <div id="tela-emprestimos" class="aba-conteudo" style="display: none;">
+                <div class="table-controls" style="justify-content: flex-end;">
+                    <button class="btn-primary" onclick="alternarFormEmprestimo(true)">+ Novo Empréstimo</button>
+                </div>
+
+                <!-- Formulário de Registro de Empréstimo -->
+                <div id="form-registro-emprestimo" class="section-card" style="display: none; position: relative;">
+                    <button type="button" onclick="alternarFormEmprestimo(false)" class="btn-close-form">✕</button>
+                    
+                    <h3 style="font-size: 18px; margin-bottom: 20px;">Registrar Empréstimo</h3>
+                    <form>
+                        <div class="form-row">
+                            <div class="input-group">
+                                <label>Leitor</label>
+                                <select class="select-input">
+                                    <option value="">Selecionar leitor...</option>
+                                    <option value="1">Ana Beatriz Costa</option>
+                                    <option value="2">Carlos Eduardo Lima</option>
+                                    <option value="3">Pedro Henrique Santos</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Livro Disponível</label>
+                                <select class="select-input">
+                                    <option value="">Selecionar livro...</option>
+                                    <option value="1">Dom Casmurro</option>
+                                    <option value="2">O Cortiço</option>
+                                    <option value="3">Sagarana</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="input-group">
+                                <label>Data de Retirada</label>
+                                <input type="text" value="17/07/2026">
+                            </div>
+                            <div class="input-group">
+                                <label>Data Prevista de Devolução</label>
+                                <input type="text" value="31/07/2026">
+                            </div>
+                        </div>
+
+                        <div class="form-actions-right" style="margin-top: 16px;">
+                            <button type="button" class="btn-secondary" onclick="alternarFormEmprestimo(false)">Cancelar</button>
+                            <button type="button" class="btn-primary" onclick="alternarFormEmprestimo(false)">Confirmar Empréstimo</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr><th>Leitor</th><th>Livro</th><th>Retirada</th><th>Devolução</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Ana Beatriz Costa</td>
+                                <td>Dom Casmurro</td>
+                                <td>01/07/2026</td>
+                                <td>15/07/2026</td>
+                                <td><span class="status-tag success">Em andamento</span></td>
+                            </tr>
+                            <tr>
+                                <td>Pedro Henrique Santos</td>
+                                <td>Sagarana</td>
+                                <td>28/06/2026</td>
+                                <td>12/07/2026</td>
+                                <td><span class="status-tag danger">Atrasado</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ================= TELA: RESERVAS ================= -->
+            <div id="tela-reservas" class="aba-conteudo" style="display: none;">
+                <div class="table-controls">
+                    <input type="text" class="search-input" placeholder="Buscar reservas por leitor ou livro...">
+                    <select class="select-filter">
+                        <option value="">Todos os status</option>
+                        <option value="aguardando">Aguardando liberação</option>
+                        <option value="disponivel">Disponível para retirada</option>
+                    </select>
+                </div>
+
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr><th>Leitor</th><th>Livro Reservado</th><th>Data da Reserva</th><th>Status</th><th>Ações</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Pedro Henrique Santos</td>
+                                <td>O Senhor dos Anéis</td>
+                                <td>12/07/2026</td>
+                                <td><span class="status-tag danger">Aguardando devolução</span></td>
+                                <td>
+                                    <button class="action-icon btn-action-danger" title="Cancelar Reserva"><i data-lucide="trash-2" class="icon-small"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Mariana Oliveira</td>
+                                <td>Grande Sertão: Veredas</td>
+                                <td>14/07/2026</td>
+                                <td><span class="status-tag success">Disponível para retirada</span></td>
+                                <td>
+                                    <button class="action-icon icon-success" title="Efetivar Empréstimo"><i data-lucide="check" class="icon-small"></i></button>
+                                    <button class="action-icon btn-action-danger" title="Cancelar Reserva"><i data-lucide="trash-2" class="icon-small"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ================= TELA: USUÁRIOS ================= -->
+<!-- ================= TELA: USUÁRIOS ================= -->
+            <div id="tela-usuarios" class="aba-conteudo" style="display: none;">
+                <div class="table-controls table-controls-usuarios">
+                    <div class="sub-nav-buttons">
+                        <button class="btn-subnav active" id="btn-tab-leitores" onclick="alternarAbaUsuarios('leitores', this)">
+                            <i data-lucide="book-open" class="icon-small"></i> Leitores
+                        </button>
+                        <button class="btn-subnav" id="btn-tab-funcionarios" onclick="alternarAbaUsuarios('funcionarios', this)">
+                            <i data-lucide="briefcase" class="icon-small"></i> Funcionários
+                        </button>
+                        <button class="btn-subnav" id="btn-tab-solicitacoes" onclick="alternarAbaUsuarios('solicitacoes', this)">
+                            <i data-lucide="inbox" class="icon-small"></i> Solicitações <span class="badge-count">3</span>
+                        </button>
+                    </div>
+                    <button class="btn-primary" onclick="alternarFormUsuario(true)">+ Novo Usuário</button>
+                </div>
+
+                <!-- Formulário de Registro de Usuário -->
+                <div id="form-registro-usuario" class="section-card" style="display: none; position: relative;">
+                    <button type="button" onclick="alternarFormUsuario(false)" class="btn-close-form">✕</button>
+                    
+                    <h3 style="font-size: 18px; margin-bottom: 20px;">Registrar Usuário</h3>
+                    <form>
+                        <div class="input-group">
+                            <label>Nome Completo</label>
+                            <input type="text" placeholder="Ex: Ana Beatriz Costa">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="input-group">
+                                <label>CPF</label>
+                                <input type="text" placeholder="000.000.000-00">
+                            </div>
+                            <div class="input-group">
+                                <label>E-mail</label>
+                                <input type="email" placeholder="nome@email.com">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="input-group">
+                                <label>Telefone</label>
+                                <input type="text" placeholder="(00) 00000-0000">
+                            </div>
+                            <div class="input-group">
+                                <label>Perfil de Acesso</label>
+                                <select class="select-input">
+                                    <option value="leitor">Leitor</option>
+                                    <option value="bibliotecario">Bibliotecário</option>
+                                    <option value="admin">Administrador</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-actions-right" style="margin-top: 16px;">
+                            <button type="button" class="btn-secondary" onclick="alternarFormUsuario(false)">Cancelar</button>
+                            <button type="button" class="btn-primary" onclick="alternarFormUsuario(false)">Confirmar Cadastro</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- SUBTELA 1: LEITORES -->
+                <div id="subtela-leitores" class="subtela-usuarios">
+                    <div class="admin-table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr><th>Nome</th><th>CPF</th><th>Email</th><th>Telefone</th><th>Status</th><th>Perfil</th><th>Ações</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="user-name-cell">
+                                            <div class="avatar-circle">AB</div>
+                                            <strong>Ana Beatriz Costa</strong>
+                                        </div>
+                                    </td>
+                                    <td>123.456.789-00</td>
+                                    <td>ana.beatriz@email.com</td>
+                                    <td>(11) 99845-2310</td>
+                                    <td><span class="status-tag success">Ativo</span></td>
+                                    <td>Leitor</td>
+                                    <td>
+                                        <button class="action-icon" title="Editar"><i data-lucide="pencil" class="icon-small"></i></button>
+                                        <button class="action-icon" title="Bloquear"><i data-lucide="lock" class="icon-small"></i></button>
+                                        <button class="action-icon btn-action-danger" title="Excluir"><i data-lucide="trash-2" class="icon-small"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SUBTELA 2: FUNCIONÁRIOS (Diferencial do Administrador) -->
+                <div id="subtela-funcionarios" class="subtela-usuarios" style="display: none;">
+                    <div class="admin-table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr><th>Nome</th><th>Cargo / Perfil</th><th>Email</th><th>Último Acesso</th><th>Status</th><th>Ações</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="user-name-cell">
+                                            <div class="avatar-circle">FR</div>
+                                            <strong>Fernando Ribeiro</strong>
+                                        </div>
+                                    </td>
+                                    <td><span class="book-tag tag-admin">Administrador</span></td>
+                                    <td>fernando.admin@biblioteca.sp.gov.br</td>
+                                    <td>Hoje, 18:45</td>
+                                    <td><span class="status-tag success">Ativo</span></td>
+                                    <td>
+                                        <button class="action-icon" title="Editar"><i data-lucide="pencil" class="icon-small"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="user-name-cell">
+                                            <div class="avatar-circle">CS</div>
+                                            <strong>Carlos Souza</strong>
+                                        </div>
+                                    </td>
+                                    <td><span class="book-tag tag-biblio">Bibliotecário</span></td>
+                                    <td>carlos.biblio@biblioteca.sp.gov.br</td>
+                                    <td>Ontem, 16:30</td>
+                                    <td><span class="status-tag success">Ativo</span></td>
+                                    <td>
+                                        <button class="action-icon" title="Editar"><i data-lucide="pencil" class="icon-small"></i></button>
+                                        <button class="action-icon" title="Permissões"><i data-lucide="key" class="icon-small"></i></button>
+                                        <button class="action-icon btn-action-danger" title="Revogar Acesso"><i data-lucide="user-x" class="icon-small"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SUBTELA 3: SOLICITAÇÕES (Diferencial do Administrador) -->
+                <div id="subtela-solicitacoes" class="subtela-usuarios" style="display: none;">
+                    <div class="admin-table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr><th>Solicitante</th><th>Tipo de Solicitação</th><th>Data</th><th>Status</th><th>Ações</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="user-name-cell">
+                                            <div class="avatar-circle">JL</div>
+                                            <strong>Juliana Lopes</strong>
+                                        </div>
+                                    </td>
+                                    <td>Acesso de Bibliotecário</td>
+                                    <td>18/07/2026</td>
+                                    <td><span class="status-tag warning">Pendente</span></td>
+                                    <td>
+                                        <button class="action-icon icon-success" title="Aprovar"><i data-lucide="check-circle" class="icon-small"></i></button>
+                                        <button class="action-icon btn-action-danger" title="Rejeitar"><i data-lucide="x-circle" class="icon-small"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="user-name-cell">
+                                            <div class="avatar-circle">RM</div>
+                                            <strong>Roberto Mendes</strong>
+                                        </div>
+                                    </td>
+                                    <td>Cadastro de Novo Leitor</td>
+                                    <td>17/07/2026</td>
+                                    <td><span class="status-tag warning">Em análise</span></td>
+                                    <td>
+                                        <button class="action-icon icon-success" title="Aprovar"><i data-lucide="check-circle" class="icon-small"></i></button>
+                                        <button class="action-icon btn-action-danger" title="Rejeitar"><i data-lucide="x-circle" class="icon-small"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="user-name-cell">
+                                            <div class="avatar-circle">PA</div>
+                                            <strong>Patrícia Alves</strong>
+                                        </div>
+                                    </td>
+                                    <td>Renovação de Cadastro Bloqueado</td>
+                                    <td>16/07/2026</td>
+                                    <td><span class="status-tag warning">Pendente</span></td>
+                                    <td>
+                                        <button class="action-icon icon-success" title="Aprovar"><i data-lucide="check-circle" class="icon-small"></i></button>
+                                        <button class="action-icon btn-action-danger" title="Rejeitar"><i data-lucide="x-circle" class="icon-small"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+                <!-- Formulário de Registro de Usuário -->
+                <div id="form-registro-usuario" class="section-card" style="display: none; position: relative;">
+                    <button type="button" onclick="alternarFormUsuario(false)" class="btn-close-form">✕</button>
+                    
+                    <h3 style="font-size: 18px; margin-bottom: 20px;">Registrar Usuário</h3>
+                    <form>
+                        <div class="input-group">
+                            <label>Nome Completo</label>
+                            <input type="text" placeholder="Ex: Ana Beatriz Costa">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="input-group">
+                                <label>CPF</label>
+                                <input type="text" placeholder="000.000.000-00">
+                            </div>
+                            <div class="input-group">
+                                <label>E-mail</label>
+                                <input type="email" placeholder="nome@email.com">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="input-group">
+                                <label>Telefone</label>
+                                <input type="text" placeholder="(00) 00000-0000">
+                            </div>
+                            <div class="input-group">
+                                <label>Perfil de Acesso</label>
+                                <select class="select-input">
+                                    <option value="leitor">Leitor</option>
+                                    <option value="bibliotecario">Bibliotecário</option>
+                                    <option value="admin">Administrador</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-actions-right" style="margin-top: 16px;">
+                            <button type="button" class="btn-secondary" onclick="alternarFormUsuario(false)">Cancelar</button>
+                            <button type="button" class="btn-primary" onclick="alternarFormUsuario(false)">Confirmar Cadastro</button>
+                        </div>
+                    </form>
+                </div>
+
+            <!-- ================= TELA: RELATÓRIOS ================= -->
+            <div id="tela-relatorios" class="aba-conteudo" style="display: none;">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-card-header">
+                            <div class="metric-value">R$ 45,50</div>
+                            <i data-lucide="dollar-sign" class="icon-success"></i>
+                        </div>
+                        <div class="metric-label">Arrecadação com Multas (Mês)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-card-header">
+                            <div class="metric-value">92%</div>
+                            <i data-lucide="thumbs-up" class="icon-success"></i>
+                        </div>
+                        <div class="metric-label">Taxa de Devolução no Prazo</div>
+                    </div>
+                </div>
+
+                <div class="section-card">
+                    <h3 class="metric-card-header" style="font-size: 16px; margin-bottom: 16px;">Livros Mais Procurados</h3>
+                    <div class="list-item">
+                        <span>1. Dom Casmurro (Machado de Assis)</span>
+                        <strong>32 empréstimos</strong>
+                    </div>
+                    <div class="list-item">
+                        <span>2. O Cortiço (Aluísio Azevedo)</span>
+                        <strong>28 empréstimos</strong>
+                    </div>
+                    <div class="list-item">
+                        <span>3. Sagarana (João Guimarães Rosa)</span>
+                        <strong>19 empréstimos</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TELA: CONFIGURAÇÕES ================= -->
+            <div id="tela-configuracoes" class="aba-conteudo" style="display: none;">
+                <div class="section-card">
+                    <h3 style="font-size: 18px; margin-bottom: 20px;">Configurações da Biblioteca</h3>
+                    <form>
+                        <div class="input-group">
+                            <label>Nome da Biblioteca</label>
+                            <input type="text" value="Biblioteca Municipal de São Paulo">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="input-group">
+                                <label>Prazo padrão de empréstimo (dias)</label>
+                                <input type="number" value="14">
+                            </div>
+                            <div class="input-group">
+                                <label>Valor da multa por dia (R$)</label>
+                                <input type="text" value="1,50">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="input-group">
+                                <label>Limite de empréstimos por usuário</label>
+                                <input type="number" value="3">
+                            </div>
+                            <div class="input-group">
+                                <label>Prazo máximo de renovação (dias)</label>
+                                <input type="number" value="7">
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn-primary" style="margin-top: 12px;">Salvar configurações</button>
+                    </form>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="js/script.js"></script>
+    <script type="module" src="js/setup-banco.js"></script>
+</body>
+</html>
