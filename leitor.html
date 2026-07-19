@@ -66,13 +66,13 @@
                 </div>
             </header>
 
-            <!-- ================= ABA: MEU PAINEL ================= -->
+           <!-- ================= ABA: MEU PAINEL ================= -->
             <div id="aba-painel" class="aba-conteudo">
                 <!-- Grid de Resumos Rápidos do Leitor -->
                 <div class="metrics-grid">
                     <div class="metric-card">
                         <div class="metric-card-header">
-                            <div class="metric-value">2</div>
+                            <div class="metric-value" id="leitor-qtd-emprestimos">...</div>
                             <i data-lucide="book-open" class="icon-success"></i>
                         </div>
                         <div class="metric-label">Livros Emprestados</div>
@@ -80,7 +80,7 @@
 
                     <div class="metric-card">
                         <div class="metric-card-header">
-                            <div class="metric-value">1</div>
+                            <div class="metric-value" id="leitor-qtd-reservas">...</div>
                             <i data-lucide="bookmark" class="icon-success"></i>
                         </div>
                         <div class="metric-label">Minhas Reservas</div>
@@ -88,7 +88,7 @@
 
                     <div class="metric-card">
                         <div class="metric-card-header">
-                            <div class="metric-value">R$ 0,00</div>
+                            <div class="metric-value" id="leitor-total-multas">R$ 0,00</div>
                             <i data-lucide="dollar-sign" class="icon-success"></i>
                         </div>
                         <div class="metric-label">Multas Pendentes</div>
@@ -100,28 +100,13 @@
                     <h3 class="metric-card-header" style="font-size: 16px; margin-bottom: 16px;">Meus Empréstimos Ativos</h3>
                     
                     <div class="admin-table-container">
-                        <table class="admin-table">
+                        <table class="admin-table" id="tabela-meus-emprestimos">
                             <thead>
                                 <tr><th>Livro</th><th>Data de Retirada</th><th>Prazo de Devolução</th><th>Status</th><th>Ações</th></tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td><strong>Dom Casmurro</strong></td>
-                                    <td>08/07/2026</td>
-                                    <td>22/07/2026</td>
-                                    <td><span class="status-tag success">No prazo</span></td>
-                                    <td>
-                                        <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px;">Renovar</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td><strong>O Cortiço</strong></td>
-                                    <td>25/06/2026</td>
-                                    <td>09/07/2026</td>
-                                    <td><span class="status-tag danger">Atrasado</span></td>
-                                    <td>
-                                        <span style="font-size: 13px; color: var(--danger-text); font-weight: 500;">Bloqueado para renovação</span>
-                                    </td>
+                                    <td colspan="5" style="text-align: center; color: var(--muted-foreground);">Carregando seus empréstimos...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -136,51 +121,28 @@
                     
                     <select class="select-filter">
                         <option value="">Todos os Gêneros</option>
-                        <option value="romance">Romance</option>
-                        <option value="literatura">Literatura</option>
-                        <option value="contos">Contos</option>
                     </select>
 
                     <select class="select-filter">
                         <option value="">Disponibilidade</option>
-                        <option value="disponivel">Disponível agora</option>
                     </select>
                 </div>
 
                 <div class="admin-table-container">
-                    <table class="admin-table">
+                    <table class="admin-table" id="tabela-buscar-livros">
                         <thead>
                             <tr><th>Capa</th><th>Título</th><th>Autor</th><th>Gênero</th><th>Status</th><th>Ações</th></tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td><div class="table-cover" style="background-color: #555; width: 32px; height: 48px; border-radius: 4px;"></div></td>
-                                <td><strong>Sagarana</strong></td>
-                                <td>João Guimarães Rosa</td>
-                                <td><span class="book-tag">Contos</span></td>
-                                <td><span class="status-tag success">Disponível</span></td>
-                                <td>
-                                    <button class="btn-primary" style="padding: 6px 12px; font-size: 12px;">Solicitar Empréstimo</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><div class="table-cover" style="background-color: #333; width: 32px; height: 48px; border-radius: 4px;"></div></td>
-                                <td><strong>1984</strong></td>
-                                <td>George Orwell</td>
-                                <td><span class="book-tag">Ficção</span></td>
-                                <td><span class="status-tag danger">Indisponível</span></td>
-                                <td>
-                                    <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px;"><i data-lucide="bookmark" class="icon-small" style="display:inline-block; vertical-align:middle; margin-right:4px;"></i>Reservar</button>
-                                </td>
+                                <td colspan="6" style="text-align: center; color: var(--muted-foreground);">Carregando catálogo de livros...</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-        </main>
-    </div>
-
     <script src="js/script.js"></script>
+    <script type="module" src="js/leitor.js"></script>
 </body>
 </html>
