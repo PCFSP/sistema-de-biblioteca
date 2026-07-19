@@ -899,6 +899,18 @@ body {
     margin: 0 auto;
 }
 
+.info-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #e8f1fc;
+    color: #1d63d1;
+    font-size: 14px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
 .info-box h3 {
     font-size: 20px;
     font-weight: 600;
@@ -1091,6 +1103,11 @@ body {
 .role-badge.admin {
     background-color: #fdf1d6;
     color: #b5860a;
+}
+
+.role-badge.biblio {
+    background-color: #e8f1fc;
+    color: #1d63d1;
 }
 
 .sidebar .role-badge {
