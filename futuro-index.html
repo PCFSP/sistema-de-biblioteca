@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca Municipal - Bem-vindo</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+    <!-- ================= TOPO DA PÁGINA (HEADER) ================= -->
+    <header class="landing-header">
+        <div class="nav-brand-landing">
+            <i data-lucide="book-open"></i>
+            <text>Biblioteca</text>
+        </div>
+        
+        <nav class="landing-nav">
+            <button class="btn-theme-toggle" onclick="toggleTheme()" title="Alternar Tema">
+                <i data-lucide="sun" id="theme-icon"></i>
+            </button>
+            <a href="login.html" class="btn-secondary btn-nav-landing">Acessar Portal</a>
+        </nav>
+    </header>
+
+    <!-- ================= SEÇÃO PRINCIPAL (HERO) ================= -->
+    <section class="hero-section">
+        <div class="hero-content">
+            <h1>Conhecimento e cultura ao seu alcance.</h1>
+            <p>Explore nosso acervo completo de livros, faça reservas online e acompanhe seus empréstimos diretamente pelo nosso portal digital.</p>
+            <div class="hero-actions">
+                <a href="login.html" class="btn-primary btn-hero">
+                    <i data-lucide="search"></i> Consultar Acervo
+                </a>
+            </div>
+        </div>
+
+        <div class="metric-card hero-card">
+            <div class="hero-card-header">
+                <div class="avatar-circle avatar-hero">M</div>
+                <div>
+                    <h4>Área do Leitor</h4>
+                    <p>Acesse seus dados e prazos</p>
+                </div>
+            </div>
+            <div class="list-item item-landing">
+                <span>Livros locados hoje</span>
+                <span class="status-tag success tag-landing">Disponível</span>
+            </div>
+            <div class="list-item item-landing">
+                <span>Renovação rápida</span>
+                <i data-lucide="check-circle-2" class="icon-success"></i>
+            </div>
+            <a href="login.html" class="btn-secondary btn-block btn-card-landing">Entrar no meu perfil</a>
+        </div>
+    </section>
+
+    <!-- ================= SEÇÃO DE RECURSOS (SERVICES) ================= -->
+    <section class="features-section">
+        <div class="features-grid">
+            <div class="feature-card">
+                <i data-lucide="book-marked"></i>
+                <h3>Amplo Acervo</h3>
+                <p>Milhares de títulos físicos e digitais categorizados entre literatura, contos, ficção e ciências.</p>
+            </div>
+            <div class="feature-card">
+                <i data-lucide="clock"></i>
+                <h3>Renovação Online</h3>
+                <p>Evite multas estendendo seus prazos de devolução diretamente pela internet sem sair de casa.</p>
+            </div>
+            <div class="feature-card">
+                <i data-lucide="qr-code"></i>
+                <h3>Reservas Eficientes</h3>
+                <p>O livro está emprestado? Reserve pelo portal e receba um aviso assim que ele retornar ao acervo.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= INFORMAÇÕES DE ATENDIMENTO ================= -->
+    <section class="info-section">
+        <div class="info-box">
+            <h3><i data-lucide="calendar" class="icon-success"></i> Horário de Funcionamento</h3>
+            <ul>
+                <li><span>Segunda a Sexta</span> <strong>08:00 às 22:00</strong></li>
+                <li><span>Sábados</span> <strong>09:00 às 13:00</strong></li>
+                <li><span>Domingos e Feriados</span> <strong>Fechado</strong></li>
+            </ul>
+        </div>
+        <div class="info-box">
+            <h3><i data-lucide="map-pin" class="icon-success"></i> Localização</h3>
+            <p class="info-address">
+                Av. Paulista, 1000 - Bela Vista<br>
+                São Paulo - SP<br>
+                CEP: 01310-100
+            </p>
+        </div>
+    </section>
+
+    <!-- ================= RODAPÉ ================= -->
+    <footer class="footer-landing">
+        <p>&copy; 2026 Sistema de Gestão de Biblioteca Municipal. Todos os direitos reservados.</p>
+    </footer>
+
+    <script src="js/script.js"></script>
+    <script type="module" src="js/firebase-config.js"></script>
+</body>
+</html>
