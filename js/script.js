@@ -269,3 +269,24 @@ document.addEventListener("DOMContentLoaded", function() {
         lucide.createIcons();
     }
 });
+
+function efetuarLogout() {
+    localStorage.removeItem("usuario-logado-nome");
+    localStorage.removeItem("usuario-logado-email");
+    window.location.href = "login.html";
+}
+
+// Tornar funções acessíveis globalmente pelas tags onclick do HTML
+window.efetuarLogout = efetuarLogout;
+window.navegar = navegar;
+window.alternarFormEmprestimo = alternarFormEmprestimo;
+window.alternarFormUsuario = alternarFormUsuario;
+window.alternarAbaUsuarios = alternarAbaUsuarios;
+window.mostrarTelaLogin = mostrarTelaLogin;
+window.toggleMenuPerfil = toggleMenuPerfil;
+window.abrirModalPerfil = abrirModalPerfil;
+window.fecharModalPerfil = fecharModalPerfil;
+window.alternarAbaPerfil = alternarAbaPerfil;
+window.navegarLeitor = navegarLeitor;
+window.toggleSidebar = toggleSidebar;
+window.toggleTheme = toggleTheme;
