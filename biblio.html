@@ -291,7 +291,6 @@
 
                 <!-- Formulário de Registro de Empréstimo -->
                 <div id="form-registro-emprestimo" class="section-card" style="display: none; position: relative;">
-                    <button type="button" onclick="alternarFormEmprestimo(false)" class="btn-close-form">✕</button>
 
                     <h3 style="font-size: 18px; margin-bottom: 20px;">Registrar Empréstimo</h3>
                     <form>
@@ -402,11 +401,15 @@
 
             <!-- ================= TELA: USUÁRIOS ================= -->
             <div id="tela-usuarios" class="aba-conteudo" style="display: none;">
-                <div class="table-controls" style="justify-content: space-between;">
-                    <button class="btn-primary">Leitores</button>
+            <div class="table-controls-usuarios">
+                <div class="sub-nav-buttons">
+                    <button type="button" class="btn-subnav active" style="cursor: default;">Leitores</button>
+                </div>
+                
+                <div>
                     <button class="btn-primary" onclick="alternarFormUsuario(true)">+ Novo Leitor</button>
                 </div>
-
+            </div>
                 <div class="info-banner">
                     <i data-lucide="user-cog"></i>
                     <span>Como bibliotecário você pode editar dados de contato dos leitores, mas não pode alterar perfis de acesso ou gerenciar funcionários.</span>
@@ -414,7 +417,6 @@
 
                 <!-- Formulário de Registro de Leitor -->
                 <div id="form-registro-usuario" class="section-card" style="display: none; position: relative;">
-                    <button type="button" onclick="alternarFormUsuario(false)" class="btn-close-form">✕</button>
 
                     <h3 style="font-size: 18px; margin-bottom: 20px;">Registrar Leitor</h3>
                     <form>
