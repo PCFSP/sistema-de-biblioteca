@@ -61,8 +61,28 @@
                         <i data-lucide="bell"></i>
                         <span class="notification-badge"></span>
                     </button>
-                    <!-- Avatar com as iniciais do usuário logado -->
-                    <div class="avatar-circle">IB</div>
+
+                    <div class="user-menu">
+                        <button class="avatar-circle" onclick="toggleMenuPerfil(event)" title="Meu Perfil">IB</button>
+
+                        <div id="dropdown-perfil" class="dropdown-perfil" style="display: none;">
+                            <div class="dropdown-perfil-header">
+                                <strong>Isabela Bastos</strong>
+                                <span class="dropdown-perfil-email">isabela.bastos@email.com</span>
+                            </div>
+
+                            <div class="dropdown-perfil-menu">
+                                <a href="javascript:void(0)" onclick="abrirModalPerfil('informacoes')">Editar perfil</a>
+                                <a href="javascript:void(0)" onclick="abrirModalPerfil('senha')">Alterar senha</a>
+                            </div>
+
+                            <div class="dropdown-perfil-footer">
+                                <a href="login.html" class="dropdown-logout">
+                                    <i data-lucide="log-out" class="icon-small"></i> Sair
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </header>
 
@@ -141,6 +161,73 @@
                     </table>
                 </div>
             </div>
+        </main>
+    </div>
+
+    <!-- ================= MODAL: MEU PERFIL ================= -->
+    <div id="modal-overlay-perfil" class="modal-overlay" style="display: none;" onclick="if (event.target === this) fecharModalPerfil();">
+        <div class="modal-perfil">
+            <div class="modal-perfil-header">
+                <h3>Meu Perfil</h3>
+                <button type="button" class="btn-close-form" onclick="fecharModalPerfil()">✕</button>
+            </div>
+
+            <div class="modal-perfil-body">
+                <div class="modal-perfil-identidade">
+                    <div class="avatar-circle avatar-lg">IB</div>
+                    <div>
+                        <strong>Isabela Bastos</strong>
+                    </div>
+                </div>
+
+                <div class="sub-nav-buttons" style="margin-bottom: 20px;">
+                    <button type="button" class="btn-subnav btn-tab-perfil active" id="tab-perfil-informacoes" onclick="alternarAbaPerfil('informacoes', this)">Informações</button>
+                    <button type="button" class="btn-subnav btn-tab-perfil" id="tab-perfil-senha" onclick="alternarAbaPerfil('senha', this)">Alterar Senha</button>
+                </div>
+
+                <!-- SUBABA: INFORMAÇÕES -->
+                <div id="subaba-perfil-informacoes" class="subaba-perfil">
+                    <div class="input-group">
+                        <label>Nome completo</label>
+                        <input type="text" value="Isabela Bastos">
+                    </div>
+                    <div class="input-group">
+                        <label>E-mail</label>
+                        <input type="email" value="isabela.bastos@email.com">
+                    </div>
+                    <div class="input-group">
+                        <label>Telefone</label>
+                        <input type="text" value="(11) 98765-4321">
+                    </div>
+                    <div class="input-group">
+                        <label>Nível de acesso</label>
+                        <input type="text" value="Leitor  (não editável)" disabled>
+                    </div>
+                </div>
+
+                <!-- SUBABA: ALTERAR SENHA -->
+                <div id="subaba-perfil-senha" class="subaba-perfil" style="display: none;">
+                    <div class="input-group">
+                        <label>Senha atual</label>
+                        <input type="password" placeholder="••••••••">
+                    </div>
+                    <div class="input-group">
+                        <label>Nova senha</label>
+                        <input type="password" placeholder="••••••••">
+                    </div>
+                    <div class="input-group">
+                        <label>Confirmar nova senha</label>
+                        <input type="password" placeholder="••••••••">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-perfil-footer">
+                <button type="button" class="btn-secondary" onclick="fecharModalPerfil()">Cancelar</button>
+                <button type="button" class="btn-primary" onclick="fecharModalPerfil()">Salvar</button>
+            </div>
+        </div>
+    </div>
 
     <script src="js/script.js"></script>
     <script type="module" src="js/leitor.js"></script>
