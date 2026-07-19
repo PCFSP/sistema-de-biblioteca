@@ -24,7 +24,8 @@
             <p>Entre com suas credenciais para acessar o sistema</p>
         </div>
 
-        <form action="admin.html" method="POST">
+        <!-- Formulário controlado pelo JavaScript para validação de contas dinâmicas -->
+        <form id="form-login">
             <div class="input-group">
                 <label for="email">E-mail</label>
                 <div class="input-with-icon">
@@ -81,8 +82,8 @@
             <div class="input-group">
                 <label for="cad-cargo">Cargo solicitado</label>
                 <select id="cad-cargo" class="select-input">
+                    <option value="leitor">Novo Leitor</option>
                     <option value="bibliotecario">Bibliotecário</option>
-                    <option value="novo-leitor">Novo Leitor</option>
                     <option value="renovacao">Renovação de Cadastro Bloqueado</option>
                 </select>
             </div>
@@ -132,6 +133,8 @@
         </div>
     </div>
 
+    <!-- Scripts de controle visual e lógica de autenticação com Firebase -->
     <script src="js/script.js"></script>
+    <script type="module" src="js/auth.js"></script>
 </body>
 </html>
