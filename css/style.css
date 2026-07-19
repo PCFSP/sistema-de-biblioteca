@@ -660,3 +660,209 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+/* ==========================================================================
+   10. ESTILOS DA PÁGINA INICIAL (LANDING PAGE - INDEX)
+   ========================================================================== */
+.landing-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+    background-color: var(--card);
+    border-bottom: 1px solid var(--border);
+    transition: background-color 0.3s;
+}
+
+.nav-brand-landing {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--primary-green);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.landing-nav {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.btn-nav-landing {
+    text-decoration: none;
+    padding: 10px 20px;
+}
+
+/* Seção Principal (Hero) */
+.hero-section {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 60px;
+    padding: 80px 40px;
+    align-items: center;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.hero-content h1 {
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 24px;
+    color: var(--foreground);
+}
+
+.hero-content p {
+    font-size: 18px;
+    color: var(--muted-foreground);
+    line-height: 1.6;
+    margin-bottom: 32px;
+}
+
+.btn-hero {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    padding: 16px 32px;
+}
+
+.hero-card {
+    border-radius: var(--radius);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+}
+
+.hero-card-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+}
+
+.avatar-hero {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+}
+
+.item-landing {
+    padding: 16px 0;
+}
+
+.tag-landing {
+    font-weight: 600;
+}
+
+.btn-card-landing {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    margin-top: 20px;
+}
+
+/* Seção de Recursos (Features) */
+.features-section {
+    background-color: var(--card);
+    border-style: 1px solid var(--border);
+    padding: 80px 40px;
+    transition: background-color 0.3s;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.feature-card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.feature-card i {
+    color: var(--primary-green);
+    width: 36px;
+    height: 36px;
+}
+
+.feature-card h3 {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.feature-card p {
+    color: var(--muted-foreground);
+    line-height: 1.6;
+    font-size: 15px;
+}
+
+/* Seção de Informações */
+.info-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    padding: 80px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.info-box h3 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.info-box ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.info-box li {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.info-address {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--muted-foreground);
+}
+
+/* Rodapé */
+.footer-landing {
+    text-align: center;
+    padding: 40px;
+    background-color: var(--card);
+    border-top: 1px solid var(--border);
+    color: var(--muted-foreground);
+    font-size: 14px;
+}
+
+/* Ajustes de Responsividade para Telas Menores */
+@media (max-width: 900px) {
+    .hero-section, .info-section {
+        grid-template-columns: 1fr;
+        gap: 40px;
+        padding: 40px 20px;
+    }
+    .hero-content h1 {
+        font-size: 32px;
+    }
+    .landing-header, .features-section {
+        padding: 20px;
+    }
+}
