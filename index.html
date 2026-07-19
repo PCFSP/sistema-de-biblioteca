@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Biblioteca - Início</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Script do Lucide para os ícones profissionais -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="login-body">
+
+    <div class="login-container">
+        <!-- Topo da Página -->
+        <div class="login-header">
+            <div class="nav-brand">
+                <i data-lucide="book-open"></i>
+                <text>Biblioteca</text>
+            </div>
+            <p>Selecione o portal que deseja acessar para entrar no sistema</p>
+        </div>
+
+        <!-- Links de Acesso em formato de botões de Menu -->
+        <div class="input-group" style="gap: 12px; margin-bottom: 0;">
+            <a href="login.html" class="btn-primary btn-block" style="text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i data-lucide="log-in" style="width: 18px; height: 18px;"></i> Tela de Login
+            </a>
+            
+            <a href="index_admin.html" class="btn-secondary btn-block" style="text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i data-lucide="shield" style="width: 18px; height: 18px;"></i> Painel do Administrador
+            </a>
+            
+            <a href="index_leitor.html" class="btn-secondary btn-block" style="text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i data-lucide="user" style="width: 18px; height: 18px;"></i> Área do Leitor
+            </a>
+        </div>
+
+        <!-- Rodapé simples -->
+        <div class="login-footer" style="margin-top: 32px;">
+            <span>Sistema de Gestão de Biblioteca &copy; 2026</span>
+        </div>
+    </div>
+
+    <!-- Inicialização dos scripts de tema e ícones externos -->
+    <script src="js/script.js"></script>
+</body>
+</html>

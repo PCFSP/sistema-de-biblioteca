@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca - Login</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="login-body">
+
+    <div class="login-container">
+        <div class="login-header">
+            <div class="nav-brand">
+                <i data-lucide="book-open"></i>
+                <text>Biblioteca</text>
+            </div>
+            <p>Entre com suas credenciais para acessar o sistema</p>
+        </div>
+
+        <form action="admin.html" method="POST">
+            <div class="input-group">
+                <label for="email">E-mail</label>
+                <div class="input-with-icon">
+                    <i data-lucide="mail"></i>
+                    <input type="email" id="email" placeholder="nome@email.com" required>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="senha">Senha</label>
+                <div class="input-with-icon">
+                    <i data-lucide="lock"></i>
+                    <input type="password" id="senha" placeholder="••••••••" required>
+                </div>
+                <div class="login-password-helper">
+                    <a href="javascript:void(0)" class="login-link">Esqueceu a senha?</a>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary btn-block">Acessar Sistema</button>
+        </form>
+
+        <div class="login-footer">
+            <span>Não tem uma conta? <a href="javascript:void(0)" class="login-link">Solicitar cadastro</a></span>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
