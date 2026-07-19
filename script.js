@@ -105,6 +105,76 @@ function mostrarTelaLogin(destino) {
 }
 
 /* ==========================================================================
+   1.2 MENU DE PERFIL DO USUÁRIO (dropdown + modal "Meu Perfil")
+   ========================================================================== */
+function toggleMenuPerfil(event) {
+    if (event) event.stopPropagation();
+
+    const dropdown = document.getElementById('dropdown-perfil');
+    if (!dropdown) return;
+
+    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+}
+
+document.addEventListener('click', function(event) {
+    const menu = document.querySelector('.user-menu');
+    const dropdown = document.getElementById('dropdown-perfil');
+
+    if (menu && dropdown && dropdown.style.display === 'block' && !menu.contains(event.target)) {
+        dropdown.style.display = 'none';
+    }
+});
+
+function abrirModalPerfil(aba) {
+    const dropdown = document.getElementById('dropdown-perfil');
+    if (dropdown) {
+        dropdown.style.display = 'none';
+    }
+
+    const overlay = document.getElementById('modal-overlay-perfil');
+    if (overlay) {
+        overlay.style.display = 'flex';
+    }
+
+    const btnAlvo = document.getElementById(aba === 'senha' ? 'tab-perfil-senha' : 'tab-perfil-informacoes');
+    alternarAbaPerfil(aba, btnAlvo);
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+function fecharModalPerfil() {
+    const overlay = document.getElementById('modal-overlay-perfil');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+}
+
+function alternarAbaPerfil(aba, btnAtivo) {
+    document.querySelectorAll('.subaba-perfil').forEach(el => {
+        el.style.display = 'none';
+    });
+
+    const alvo = document.getElementById('subaba-perfil-' + aba);
+    if (alvo) {
+        alvo.style.display = 'block';
+    }
+
+    document.querySelectorAll('.btn-tab-perfil').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    if (btnAtivo) {
+        btnAtivo.classList.add('active');
+    }
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+/* ==========================================================================
    2. FUNÇÕES DE NAVEGAÇÃO DO LEITOR (index_leitor.html)
    ========================================================================== */
 function navegarLeitor(destino) {

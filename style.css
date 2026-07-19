@@ -1070,3 +1070,198 @@ body {
     align-items: flex-start;
     text-align: left;
 }
+/* ==========================================================================
+   13. BADGE DE PERFIL (Administrador / Bibliotecário)
+   ========================================================================== */
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 50px;
+}
+
+.role-badge i {
+    width: 14px;
+    height: 14px;
+}
+
+.role-badge.admin {
+    background-color: #fdf1d6;
+    color: #b5860a;
+}
+
+.sidebar .role-badge {
+    margin: 4px 0 20px 0;
+}
+
+/* ==========================================================================
+   14. MENU DE PERFIL (DROPDOWN NO CABEÇALHO)
+   ========================================================================== */
+.user-menu {
+    position: relative;
+}
+
+button.avatar-circle {
+    border: none;
+    cursor: pointer;
+}
+
+.dropdown-perfil {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 260px;
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    padding: 16px;
+    z-index: 200;
+}
+
+.dropdown-perfil-header {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 14px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.dropdown-perfil-header strong {
+    font-size: 14px;
+    color: var(--foreground);
+}
+
+.dropdown-perfil-email {
+    font-size: 12px;
+    color: var(--muted-foreground);
+    margin-top: 2px;
+    word-break: break-all;
+}
+
+.dropdown-perfil-menu {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.dropdown-perfil-menu a {
+    padding: 8px 6px;
+    font-size: 14px;
+    color: var(--foreground);
+    text-decoration: none;
+    border-radius: 6px;
+}
+
+.dropdown-perfil-menu a:hover {
+    background-color: var(--muted);
+}
+
+.dropdown-perfil-footer a.dropdown-logout {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 6px;
+    font-size: 14px;
+    color: var(--danger-text);
+    text-decoration: none;
+    border-radius: 6px;
+}
+
+.dropdown-perfil-footer a.dropdown-logout:hover {
+    background-color: var(--danger-bg);
+}
+
+/* ==========================================================================
+   15. MODAL: MEU PERFIL
+   ========================================================================== */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(15, 15, 17, 0.45);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 500;
+    padding: 20px;
+}
+
+.modal-perfil {
+    background-color: var(--card);
+    border-radius: var(--radius);
+    width: 100%;
+    max-width: 460px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.modal-perfil-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-perfil-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--foreground);
+}
+
+.btn-close-form {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted-foreground);
+    font-size: 16px;
+    line-height: 1;
+    padding: 4px;
+    border-radius: 6px;
+}
+
+.btn-close-form:hover {
+    background-color: var(--muted);
+    color: var(--foreground);
+}
+
+.modal-perfil-body {
+    padding: 24px;
+}
+
+.modal-perfil-identidade {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.avatar-lg {
+    width: 48px;
+    height: 48px;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.modal-perfil-identidade strong {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 15px;
+    color: var(--foreground);
+}
+
+.modal-perfil-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 20px 24px;
+    border-top: 1px solid var(--border);
+}
