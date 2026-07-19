@@ -84,17 +84,19 @@ function alternarAbaUsuarios(subtela, btnAtivo) {
    1.1 FUNÇÕES DA TELA DE LOGIN / SOLICITAR CADASTRO (login.html)
    ========================================================================== */
 function mostrarTelaLogin(destino) {
-    const telaLogin = document.getElementById('tela-login');
-    const telaCadastro = document.getElementById('tela-cadastro');
+    const mapa = {
+        login: { el: document.getElementById('tela-login'), display: 'block' },
+        cadastro: { el: document.getElementById('tela-cadastro'), display: 'block' },
+        esqueci: { el: document.getElementById('tela-esqueci-senha'), display: 'flex' }
+    };
 
-    if (!telaLogin || !telaCadastro) return;
+    Object.values(mapa).forEach(item => {
+        if (item.el) item.el.style.display = 'none';
+    });
 
-    if (destino === 'cadastro') {
-        telaLogin.style.display = 'none';
-        telaCadastro.style.display = 'block';
-    } else {
-        telaCadastro.style.display = 'none';
-        telaLogin.style.display = 'block';
+    const alvo = mapa[destino] || mapa.login;
+    if (alvo.el) {
+        alvo.el.style.display = alvo.display;
     }
 
     if (typeof lucide !== 'undefined') {
@@ -112,14 +114,11 @@ function navegarLeitor(destino) {
     const btnBuscar = document.getElementById('btn-nav-buscar');
     const titulo = document.getElementById('titulo-pagina');
 
-    // Valida se os elementos existem na página antes de executar
     if (!abaPainel || !abaBuscar || !btnPainel || !btnBuscar) return;
 
-    // Oculta as abas
     abaPainel.style.display = 'none';
     abaBuscar.style.display = 'none';
 
-    // Controla a visibilidade, títulos e as classes ativas do menu
     if (destino === 'painel') {
         abaPainel.style.display = 'block';
         btnPainel.classList.add('active');
@@ -132,7 +131,6 @@ function navegarLeitor(destino) {
         if (titulo) titulo.innerText = 'Buscar Livros';
     }
 
-    // Renderiza novamente os ícones do Lucide na nova aba do leitor
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
