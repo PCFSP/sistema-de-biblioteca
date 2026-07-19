@@ -81,6 +81,28 @@ function alternarAbaUsuarios(subtela, btnAtivo) {
 }
 
 /* ==========================================================================
+   1.1 FUNÇÕES DA TELA DE LOGIN / SOLICITAR CADASTRO (login.html)
+   ========================================================================== */
+function mostrarTelaLogin(destino) {
+    const telaLogin = document.getElementById('tela-login');
+    const telaCadastro = document.getElementById('tela-cadastro');
+
+    if (!telaLogin || !telaCadastro) return;
+
+    if (destino === 'cadastro') {
+        telaLogin.style.display = 'none';
+        telaCadastro.style.display = 'block';
+    } else {
+        telaCadastro.style.display = 'none';
+        telaLogin.style.display = 'block';
+    }
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+/* ==========================================================================
    2. FUNÇÕES DE NAVEGAÇÃO DO LEITOR (index_leitor.html)
    ========================================================================== */
 function navegarLeitor(destino) {
@@ -151,7 +173,7 @@ function toggleTheme() {
     atualizarIconeTema(targetTheme);
 }
 
-function actualizarIconeTema(tema) {
+function atualizarIconeTema(tema) {
     const icon = document.getElementById('theme-icon');
     if (!icon) return; 
     

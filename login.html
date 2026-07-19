@@ -9,7 +9,13 @@
 </head>
 <body class="login-body">
 
-    <div class="login-container">
+    <!-- Botão de Modo Noturno / Claro -->
+    <button class="btn-theme-toggle login-theme-toggle" onclick="toggleTheme()" title="Alternar Tema">
+        <i data-lucide="sun" id="theme-icon"></i>
+    </button>
+
+    <!-- ================= TELA: LOGIN ================= -->
+    <div id="tela-login" class="login-container">
         <div class="login-header">
             <div class="nav-brand">
                 <i data-lucide="book-open"></i>
@@ -42,7 +48,57 @@
         </form>
 
         <div class="login-footer">
-            <span>Não tem uma conta? <a href="javascript:void(0)" class="login-link">Solicitar cadastro</a></span>
+            <span>Não tem uma conta? <a href="javascript:void(0)" class="login-link" onclick="mostrarTelaLogin('cadastro')">Solicitar cadastro</a></span>
+        </div>
+    </div>
+
+    <!-- ================= TELA: SOLICITAR CADASTRO ================= -->
+    <div id="tela-cadastro" class="login-container" style="display: none;">
+        <div class="login-header">
+            <div class="login-logo-box">
+                <i data-lucide="book-open"></i>
+            </div>
+            <h2>Solicitar Cadastro</h2>
+            <p>Sua solicitação será analisada pelo administrador</p>
+        </div>
+
+        <form onsubmit="event.preventDefault();">
+            <div class="input-group">
+                <label for="cad-nome">Nome completo</label>
+                <input type="text" id="cad-nome" placeholder="Ex: Ricardo Alves" required>
+            </div>
+
+            <div class="input-group">
+                <label for="cad-email">E-mail institucional</label>
+                <input type="email" id="cad-email" placeholder="seu@email.com" required>
+            </div>
+
+            <div class="input-group">
+                <label for="cad-crb">Número do CRB (opcional)</label>
+                <input type="text" id="cad-crb" placeholder="Ex: CRB-8 nº 9812">
+            </div>
+
+            <div class="input-group">
+                <label for="cad-cargo">Cargo solicitado</label>
+                <select id="cad-cargo" class="select-input">
+                    <option value="bibliotecario">Bibliotecário</option>
+                    <option value="novo-leitor">Novo Leitor</option>
+                    <option value="renovacao">Renovação de Cadastro Bloqueado</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="cad-mensagem">Mensagem (opcional)</label>
+                <textarea id="cad-mensagem" class="textarea-input" placeholder="Informe o motivo ou contexto do seu cadastro..."></textarea>
+            </div>
+
+            <button type="submit" class="btn-primary btn-block btn-with-icon">
+                <i data-lucide="send" class="icon-small"></i> Enviar solicitação
+            </button>
+        </form>
+
+        <div class="login-footer">
+            <a href="javascript:void(0)" class="link-back" onclick="mostrarTelaLogin('login')">Voltar ao login</a>
         </div>
     </div>
 

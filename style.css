@@ -200,6 +200,34 @@ body {
     color: var(--muted-foreground);
 }
 
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted-foreground);
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    margin-bottom: 20px;
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    transition: all 0.2s ease;
+    width: fit-content;
+}
+
+.btn-back:hover {
+    color: var(--primary-green);
+    background-color: var(--muted);
+    text-decoration: none;
+    transform: translateX(-3px);
+}
+
+.btn-back i {
+    width: 18px;
+    height: 18px;
+    transition: transform 0.2s ease;
+}
+
 .btn-primary {
     background-color: var(--primary-green);
     color: #ffffff;
@@ -923,4 +951,76 @@ body {
     .landing-header, .features-section {
         padding: 20px;
     }
+}
+/* ==========================================================================
+   11. TELA DE SOLICITAR CADASTRO (login.html)
+   ========================================================================== */
+.login-theme-toggle {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+}
+
+.login-header h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--foreground);
+}
+
+.login-logo-box {
+    width: 64px;
+    height: 64px;
+    background-color: var(--primary-green);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px auto;
+}
+
+.login-logo-box i {
+    width: 32px;
+    height: 32px;
+    color: #ffffff;
+}
+
+.input-group select.select-input,
+.input-group textarea.textarea-input {
+    width: 100%;
+}
+
+.textarea-input {
+    padding: 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background-color: var(--muted);
+    font-size: 14px;
+    color: var(--foreground);
+    outline: none;
+    resize: vertical;
+    min-height: 90px;
+    font-family: inherit;
+}
+
+.textarea-input:focus {
+    border-color: var(--primary-green);
+}
+
+.btn-with-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.link-back {
+    color: var(--muted-foreground);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.link-back:hover {
+    text-decoration: underline;
+    color: var(--foreground);
 }
