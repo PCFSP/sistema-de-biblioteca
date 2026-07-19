@@ -3,45 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Biblioteca - Início</title>
+    <title>Biblioteca Municipal - Bem-vindo</title>
     <link rel="stylesheet" href="css/style.css">
-    <!-- Script do Lucide para os ícones profissionais -->
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="login-body">
+<body>
 
-    <div class="login-container">
-        <!-- Topo da Página -->
-        <div class="login-header">
-            <div class="nav-brand">
-                <i data-lucide="book-open"></i>
-                <text>Biblioteca</text>
+    <!-- ================= TOPO DA PÁGINA (HEADER) ================= -->
+    <header class="landing-header">
+        <div class="nav-brand-landing">
+            <i data-lucide="book-open"></i>
+            <text>Biblioteca</text>
+        </div>
+        
+        <nav class="landing-nav">
+            <button class="btn-theme-toggle" onclick="toggleTheme()" title="Alternar Tema">
+                <i data-lucide="sun" id="theme-icon"></i>
+            </button>
+            <a href="login.html" class="btn-secondary btn-nav-landing">Acessar Portal</a>
+        </nav>
+    </header>
+
+    <!-- ================= SEÇÃO PRINCIPAL (HERO) ================= -->
+    <section class="hero-section">
+        <div class="hero-content">
+            <h1>Conhecimento e cultura ao seu alcance.</h1>
+            <p>Explore nosso acervo completo de livros, faça reservas online e acompanhe seus empréstimos diretamente pelo nosso portal digital.</p>
+            <div class="hero-actions">
+                <!-- Rola a tela até a seção de pesquisa -->
+                <a href="#secao-consulta-acervo" class="btn-primary btn-hero" onclick="document.getElementById('secao-consulta-acervo').scrollIntoView({behavior: 'smooth'}); return false;">
+                    <i data-lucide="search"></i> Consultar Acervo
+                </a>
             </div>
-            <p>Selecione o portal que deseja acessar para entrar no sistema</p>
         </div>
 
-        <!-- Links de Acesso em formato de botões de Menu -->
-        <div class="input-group" style="gap: 12px; margin-bottom: 0;">
-            <a href="login.html" class="btn-primary btn-block" style="text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                <i data-lucide="log-in" style="width: 18px; height: 18px;"></i> Tela de Login
-            </a>
+        <div class="metric-card hero-card">
+            <div class="hero-card-header">
+                <div class="avatar-circle avatar-hero">M</div>
+                <div>
+                    <h4>Área do Leitor</h4>
+                    <p>Acesse seus dados e prazos</p>
+                </div>
+            </div>
+            <div class="list-item item-landing">
+                <span>Livros locados hoje</span>
+                <span class="status-tag success tag-landing">Disponível</span>
+            </div>
+            <div class="list-item item-landing">
+                <span>Renovação rápida</span>
+                <i data-lucide="check-circle-2" class="icon-success"></i>
+            </div>
+            <a href="login.html" class="btn-secondary btn-block btn-card-landing">Entrar no meu perfil</a>
+        </div>
+    </section>
+
+    <!-- ================= SEÇÃO DE PESQUISA E CONSULTA DO ACERVO ================= -->
+    <section id="secao-consulta-acervo" class="aba-conteudo" style="padding: 40px var(--padding-container); border-top: 1px solid var(--border); background: var(--card);">
+        <div class="section-card" style="max-width: 1200px; margin: 0 auto; box-shadow: none;">
+            <h2 style="font-size: 24px; margin-bottom: 8px;">Pesquisar no Nosso Acervo</h2>
+            <p style="color: var(--muted-foreground); margin-bottom: 24px;">Consulte os livros disponíveis na biblioteca municipal. Para realizar empréstimos ou reservas, acesse sua conta.</p>
             
-            <a href="index_admin.html" class="btn-secondary btn-block" style="text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                <i data-lucide="shield" style="width: 18px; height: 18px;"></i> Painel do Administrador
-            </a>
-            
-            <a href="index_leitor.html" class="btn-secondary btn-block" style="text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                <i data-lucide="user" style="width: 18px; height: 18px;"></i> Área do Leitor
-            </a>
-        </div>
+            <div class="table-controls" style="margin-bottom: 20px;">
+                <input type="text" id="input-busca-publica" class="search-input" placeholder="Pesquisar por título, autor ou gênero..." style="width: 100%; max-width: 500px;">
+            </div>
 
-        <!-- Rodapé simples -->
-        <div class="login-footer" style="margin-top: 32px;">
-            <span>Sistema de Gestão de Biblioteca &copy; 2026</span>
+            <div class="admin-table-container">
+                <table class="admin-table" id="tabela-acervo-publico">
+                    <thead>
+                        <tr><th>Capa</th><th>Título</th><th>Autor</th><th>Gênero</th><th>Status</th><th>Ações</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--muted-foreground);">Carregando catálogo do Firebase...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Inicialização dos scripts de tema e ícones externos -->
+    <!-- ================= SEÇÃO DE RECURSOS (SERVICES) ================= -->
+    <section class="features-section">
+        <div class="features-grid">
+            <div class="feature-card">
+                <i data-lucide="book-marked"></i>
+                <h3>Amplo Acervo</h3>
+                <p>Milhares de títulos físicos e digitais categorizados entre literatura, contos, ficção e ciências.</p>
+            </div>
+            <div class="feature-card">
+                <i data-lucide="clock"></i>
+                <h3>Renovação Online</h3>
+                <p>Evite multas estendendo seus prazos de devolução diretamente pela internet sem sair de casa.</p>
+            </div>
+            <div class="feature-card">
+                <i data-lucide="qr-code"></i>
+                <h3>Reservas Eficientes</h3>
+                <p>O livro está emprestado? Reserve pelo portal e receba um aviso assim que ele retornar ao acervo.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= INFORMAÇÕES DE ATENDIMENTO ================= -->
+    <section class="info-section">
+        <div class="info-box">
+            <h3><i data-lucide="calendar" class="icon-success"></i> Horário de Funcionamento</h3>
+            <ul>
+                <li><span>Segunda a Sexta</span> <strong>08:00 às 22:00</strong></li>
+                <li><span>Sábados</span> <strong>09:00 às 13:00</strong></li>
+                <li><span>Domingos e Feriados</span> <strong>Fechado</strong></li>
+            </ul>
+        </div>
+        <div class="info-box">
+            <h3><i data-lucide="map-pin" class="icon-success"></i> Localização</h3>
+            <p class="info-address">
+                Av. Paulista, 1000 - Bela Vista<br>
+                São Paulo - SP<br>
+                CEP: 01310-100
+            </p>
+        </div>
+    </section>
+
+    <!-- ================= RODAPÉ ================= -->
+    <footer class="footer-landing">
+        <p>&copy; 2026 Sistema de Gestão de Biblioteca Municipal. Todos os direitos reservados.</p>
+    </footer>
+
     <script src="js/script.js"></script>
+    <script type="module" src="js/landing.js"></script>
 </body>
 </html>
