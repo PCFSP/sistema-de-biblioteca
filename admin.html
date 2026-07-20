@@ -229,6 +229,23 @@
                     <i data-lucide="arrow-left"></i>
                     <span>Voltar ao acervo</span>
                 </a>
+                                <!-- INÍCIO DO BLOCO DE PESQUISA (OPEN LIBRARY) -->
+                <div class="section-card" style="margin-bottom: 20px;">
+                    <h3 style="margin-bottom: 15px;">Auto-preencher via Catálogo Global</h3>
+
+                    <div style="display: flex; gap: 10px; align-items: stretch;">
+                        <div class="input-group" style="flex: 1; margin-bottom: 0;">
+                            <input type="text" id="input-busca-catalogo" placeholder="Digite o ISBN ou Título...">
+                        </div>
+                        <button type="button" id="btn-autofill" class="btn-primary"
+                            style="margin-bottom: 0; padding: 0 20px;">Buscar</button>
+                    </div>
+
+                    <small id="autofill-status" style="display: block; margin-top: 10px; font-weight: bold;"></small>
+                    <div id="autofill-results"
+                        style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;"></div>
+                </div>
+                <!-- FIM DO BLOCO DE PESQUISA -->
                 <div class="form-container">
                     <div class="section-card">
                         <h3>Informações do Livro</h3>
