@@ -1435,3 +1435,64 @@ button.avatar-circle {
     font-size: 12px;
     color: var(--muted-foreground);
 }
+/* ==========================================
+   RESULTADOS DO AUTO-PREENCHIMENTO (GERADOS PELO JS)
+   ========================================== */
+
+.autofill-result-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px;
+    background-color: transparent; 
+    color: inherit; 
+    border: 1px solid var(--muted-foreground, #444);
+    border-radius: 6px;
+    transition: transform 0.2s ease;
+}
+
+.autofill-result-item:hover {
+    transform: translateY(-2px);
+    background-color: rgba(255, 255, 255, 0.03); /* Leve destaque ao passar o mouse */
+}
+
+.autofill-result-img {
+    width: 40px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+    background-color: var(--muted-foreground, #222);
+}
+
+.autofill-result-info {
+    flex: 1;
+    line-height: 1.4;
+}
+
+.autofill-result-title {
+    font-size: 15px;
+    font-weight: 600;
+    display: block;
+    color: inherit;
+}
+
+.autofill-result-details {
+    font-size: 13px;
+    color: var(--muted-foreground, #888);
+}
+
+.autofill-select-btn {
+    padding: 8px 16px;
+    background-color: var(--primary, #1e3a29); 
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 13px;
+    transition: opacity 0.2s ease;
+}
+
+.autofill-select-btn:hover {
+    opacity: 0.8;
+}
