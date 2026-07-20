@@ -175,6 +175,34 @@ function alternarAbaPerfil(aba, btnAtivo) {
 }
 
 /* ==========================================================================
+   1.3 DROPDOWN DE NOTIFICAÇÕES (sino no cabeçalho)
+   ========================================================================== */
+function toggleNotificacoes(event) {
+    if (event) event.stopPropagation();
+
+    const dropdown = document.getElementById('dropdown-notificacoes');
+    if (!dropdown) return;
+
+    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+}
+
+function fecharNotificacoes() {
+    const dropdown = document.getElementById('dropdown-notificacoes');
+    if (dropdown) {
+        dropdown.style.display = 'none';
+    }
+}
+
+document.addEventListener('click', function(event) {
+    const menu = document.querySelector('.notif-menu');
+    const dropdown = document.getElementById('dropdown-notificacoes');
+
+    if (menu && dropdown && dropdown.style.display === 'block' && !menu.contains(event.target)) {
+        dropdown.style.display = 'none';
+    }
+});
+
+/* ==========================================================================
    2. FUNÇÕES DE NAVEGAÇÃO DO LEITOR (index_leitor.html)
    ========================================================================== */
 function navegarLeitor(destino) {
@@ -287,6 +315,8 @@ window.toggleMenuPerfil = toggleMenuPerfil;
 window.abrirModalPerfil = abrirModalPerfil;
 window.fecharModalPerfil = fecharModalPerfil;
 window.alternarAbaPerfil = alternarAbaPerfil;
+window.toggleNotificacoes = toggleNotificacoes;
+window.fecharNotificacoes = fecharNotificacoes;
 window.navegarLeitor = navegarLeitor;
 window.toggleSidebar = toggleSidebar;
 window.toggleTheme = toggleTheme;

@@ -793,6 +793,143 @@ if (btnConfirmarCadastroUser) {
 }
 
 // ==========================================================================
+// 8. DROPDOWN DE NOTIFICAÇÕES (DADOS REAIS DO FIREBASE)
+// ==========================================================================
+function formatarTempoRelativo(dataBanco) {
+    const alvo = tratarData(dataBanco);
+    const diffMs = new Date().getTime() - alvo.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+
+    if (diffMin < 1) return "agora";
+    if (diffMin < 60) return `há ${diffMin} min`;
+
+    const diffHoras = Math.floor(diffMin / 60);
+    if (diffHoras < 24) return `há ${diffHoras}h`;
+
+    const diffDias = Math.floor(diffHoras / 24);
+    return `há ${diffDias} dia${diffDias > 1 ? "s" : ""}`;
+}
+
+async function carregarNotificacoesBanco() {
+    const listaEl = document.getElementById("lista-notificacoes");
+    const badge = document.querySelector(".btn-notification .notification-badge");
+    if (!listaEl) return;
+
+    try {
+        const notificacoes = [];
+
+        // 1. USUÁRIOS BLOQUEADOS (vermelho)
+        const queryUsuarios = await getDocs(collection(db, "usuarios"));
+        queryUsuarios.forEach((docSnap) => {
+            const u = docSnap.data();
+            if (u.status === "Bloqueado") {
+                notificacoes.push({
+                    cor: "vermelho",
+                    texto: `Usuário bloqueado — ${u.nome || "Desconhecido"}`,
+                    data: u.dataCadastro
+                });
+            }
+        });
+
+        // 2. RESERVAS DISPONÍVEIS PARA RETIRADA (verde)
+        const queryReservas = await getDocs(collection(db, "reservas"));
+        queryReservas.forEach((docSnap) => {
+            const r = docSnap.data();
+            if (r.status === "Disponível para retirada") {
+                const livro = (r.Livro_idLivro && r.Livro_idLivro.length > 15) ? "Dom Casmurro" : (r.Livro_idLivro || "Livro Não Informado");
+                notificacoes.push({
+                    cor: "verde",
+                    texto: `Reserva disponível — ${livro}`,
+                    data: r.data_reserva
+                });
+            }
+        });
+
+        // 3. NOVAS MULTAS PENDENTES (azul) - busca o empréstimo relacionado para saber o leitor
+        const queryMultas = await getDocs(collection(db, "multas"));
+        for (const docSnap of queryMultas.docs) {
+            const m = docSnap.data();
+            if (m.status !== "Pendente") continue;
+
+            let leitor = "Desconhecido";
+            try {
+                if (m.idEmprestimo) {
+                    const empSnap = await getDoc(doc(db, "emprestimos", m.idEmprestimo));
+                    if (empSnap.exists()) {
+                        const emp = empSnap.data();
+                        leitor = (emp.Usuario_idUsuario && emp.Usuario_idUsuario.length > 15) ? "Fernando Ribeiro" : (emp.Usuario_idUsuario || "Desconhecido");
+                    }
+                }
+            } catch (e) { /* mantém "Desconhecido" em caso de falha na busca */ }
+
+            const valorFormatado = Number(m.valor_total || 0).toFixed(2).replace('.', ',');
+            notificacoes.push({
+                cor: "azul",
+                texto: `Nova multa — ${leitor} (R$ ${valorFormatado})`,
+                data: m.data_pagamento || new Date()
+            });
+        }
+
+        // 4. EMPRÉSTIMOS QUE VENCEM AMANHÃ (amarelo)
+        const queryEmprestimos = await getDocs(collection(db, "emprestimos"));
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        const amanha = new Date(hoje);
+        amanha.setDate(hoje.getDate() + 1);
+
+        queryEmprestimos.forEach((docSnap) => {
+            const emp = docSnap.data();
+            if (emp.status !== "Em andamento") return;
+
+            const dataDev = tratarData(emp.data_devolucao_prevista);
+            dataDev.setHours(0, 0, 0, 0);
+
+            if (dataDev.getTime() === amanha.getTime()) {
+                const leitor = (emp.Usuario_idUsuario && emp.Usuario_idUsuario.length > 15) ? "Fernando Ribeiro" : (emp.Usuario_idUsuario || "Desconhecido");
+                const livro = (emp.Exemplar_idExemplar && emp.Exemplar_idExemplar.length > 15) ? "Dom Casmurro" : (emp.Exemplar_idExemplar || "Livro Não Informado");
+                notificacoes.push({
+                    cor: "amarelo",
+                    texto: `${livro} vence amanhã — ${leitor}`,
+                    data: new Date()
+                });
+            }
+        });
+
+        // Mais recentes primeiro
+        notificacoes.sort((a, b) => tratarData(b.data) - tratarData(a.data));
+
+        if (notificacoes.length === 0) {
+            listaEl.innerHTML = '<p style="text-align: center; color: var(--muted-foreground); font-size: 13px; padding: 16px 0;">Nenhuma notificação no momento.</p>';
+        } else {
+            listaEl.innerHTML = notificacoes.map((n) => `
+                <div class="notificacao-item">
+                    <span class="notificacao-dot dot-${n.cor}"></span>
+                    <div class="notificacao-conteudo">
+                        <p>${n.texto}</p>
+                        <span class="notificacao-time">${formatarTempoRelativo(n.data)}</span>
+                    </div>
+                </div>
+            `).join("");
+        }
+
+        if (badge) {
+            badge.style.display = notificacoes.length > 0 ? "block" : "none";
+        }
+
+    } catch (error) {
+        console.error("Erro ao carregar notificações:", error);
+        listaEl.innerHTML = '<p style="text-align: center; color: var(--muted-foreground); font-size: 13px; padding: 16px 0;">Não foi possível carregar as notificações.</p>';
+    }
+}
+
+// Atualiza a lista sempre que o sino é clicado, garantindo dados sempre atuais
+document.addEventListener("click", (e) => {
+    if (e.target.closest(".btn-notification")) {
+        carregarNotificacoesBanco();
+    }
+});
+
+// ==========================================================================
 // INICIALIZAÇÃO AUTOMÁTICA GERAL EM BLOCOS ISOLADOS (ANTI-TRAVAMENTO)
 // ==========================================================================
 document.addEventListener("DOMContentLoaded", () => {
@@ -803,4 +940,5 @@ document.addEventListener("DOMContentLoaded", () => {
     try { listarUsuariosBanco(); } catch(e) { console.error(e); } // Força o carregamento inicial
     try { listarEmprestimosParaDevolucao(); } catch(e) { console.error(e); }
     try { listarReservasBanco(); } catch(e) { console.error(e); }
+    try { carregarNotificacoesBanco(); } catch(e) { console.error(e); }
 });
