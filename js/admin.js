@@ -64,9 +64,8 @@ function tratarData(dataBanco) {
 }
 
 // ==========================================================================
-// CENTRALIZADOR DE TROCA DE ABAS / GATILHOS DO BANCO
+// CENTRALIZADOR DE TROCA DE ABAS / GATILHOS DO BANCO (CORRIGIDO)
 // ==========================================================================
-
 document.addEventListener("click", (e) => {
     const itemMenu = e.target.closest(".sidebar-item");
     if (!itemMenu) return;
@@ -80,11 +79,9 @@ document.addEventListener("click", (e) => {
             listarEmprestimosBanco();
             carregarSelectsEmprestimo();
         }
-        if (idTela === "devolucoes") {
-            listarEmprestimosParaDevolucao();
-        }
+        if (idTela === "devolucoes") listarEmprestimosParaDevolucao();
         if (idTela === "configuracoes") carregarConfiguracoesBanco();
-        if (idTela === "usuarios") listarUsuariosBanco();
+        if (idTela === "usuarios") listarUsuariosBanco(); // Garante o disparo ao clicar na aba
         if (idTela === "reservas") listarReservasBanco();
     }, 150);
 });
@@ -593,25 +590,32 @@ window.efetivarReservaParaEmprestimo = async function(idReserva, leitor, livro) 
 };
 
 // ==========================================================================
-// 7. TELA: USUÁRIOS
+// 7. TELA: USUÁRIOS E SUBABA DE SOLICITAÇÕES - ATUALIZADO
 // ==========================================================================
+
 async function listarUsuariosBanco() {
-    const tbodyLeitores = document.querySelector("#tela-usuarios .admin-table tbody");
-    if (!tbodyLeitores) return;
+    const tbodyLeitores = document.getElementById("tbody-usuarios-ativos");
+    const tbodyFuncionarios = document.getElementById("tbody-funcionarios-ativos");
+    
+    if (!tbodyLeitores && !tbodyFuncionarios) return;
 
     try {
         const querySnapshot = await getDocs(collection(db, "usuarios"));
-        tbodyLeitores.innerHTML = "";
+        
+        if (tbodyLeitores) tbodyLeitores.innerHTML = "";
+        if (tbodyFuncionarios) tbodyFuncionarios.innerHTML = "";
 
-        // Valida se a tabela que está na tela possui fisicamente a 6ª coluna de Perfil (Admin vs Biblio)
-        const possuiColunaPerfil = document.querySelector("#tela-usuarios .admin-table thead th:nth-child(6)")?.innerText === "Perfil";
+        let qtdLeitores = 0;
+        let qtdFuncionarios = 0;
 
-        querySnapshot.forEach((doc) => {
-            const user = doc.data();
-            const iniciais = user.nome ? user.nome.substring(0,2).toUpperCase() : "U";
-            const fotoHTML = user.foto ? `<img src="${user.foto}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">` : `<div class="avatar-circle">${iniciais}</div>`;
-
-            const colunaPerfilHTML = possuiColunaPerfil ? `<td>${user.tipoUser || "Leitor"}</td>` : "";
+        querySnapshot.forEach((docSnap) => {
+            const user = docSnap.data();
+            const idDoc = docSnap.id;
+            const cargo = (user.tipoUser || "leitor").toLowerCase().trim();
+            const iniciais = user.nome ? user.nome.substring(0, 2).toUpperCase() : "U";
+            const fotoHTML = user.foto 
+                ? `<img src="${user.foto}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">` 
+                : `<div class="avatar-circle">${iniciais}</div>`;
 
             const linha = `
                 <tr>
@@ -620,54 +624,183 @@ async function listarUsuariosBanco() {
                     <td>${user.email || "-"}</td>
                     <td>${user.telefone || "-"}</td>
                     <td><span class="status-tag success">${user.status || "Ativo"}</span></td>
-                    ${colunaPerfilHTML}
+                    <td><span class="book-tag">${user.tipoUser || "leitor"}</span></td>
                     <td>
-                        <button class="action-icon btn-action-danger" onclick="deletarDocumento('usuarios', '${doc.id}')" title="Excluir"><i data-lucide="trash-2" class="icon-small"></i></button>
+                        <button class="action-icon btn-action-danger" onclick="deletarDocumento('usuarios', '${idDoc}')" title="Excluir"><i data-lucide="trash-2" class="icon-small"></i></button>
                     </td>
                 </tr>
             `;
-            tbodyLeitores.insertAdjacentHTML("beforeend", linha);
+
+            // Separação de cargos pelas abas
+            if (cargo === "bibliotecario" || cargo === "admin" || cargo === "administrador") {
+                if (tbodyFuncionarios) tbodyFuncionarios.insertAdjacentHTML("beforeend", linha);
+                qtdFuncionarios++;
+            } else {
+                if (tbodyLeitores) tbodyLeitores.insertAdjacentHTML("beforeend", linha);
+                qtdLeitores++;
+            }
         });
+
+        if (tbodyLeitores && qtdLeitores === 0) {
+            tbodyLeitores.innerHTML = "<tr><td colspan='7' style='text-align: center; color: var(--muted-foreground); padding: 16px 0;'>Nenhum leitor cadastrado.</td></tr>";
+        }
+        if (tbodyFuncionarios && qtdFuncionarios === 0) {
+            tbodyFuncionarios.innerHTML = "<tr><td colspan='7' style='text-align: center; color: var(--muted-foreground); padding: 16px 0;'>Nenhum funcionário cadastrado.</td></tr>";
+        }
+
+        await listarSolicitacoesPendentesAdmin();
+
         if (typeof lucide !== "undefined") lucide.createIcons();
+
     } catch (error) { 
         console.error("Erro ao listar usuários:", error); 
     }
 }
 
-const btnConfirmarCadastroUser = document.getElementById("btn-confirmar-cadastro-user");
-if (btnConfirmarCadastroUser) {
-    btnConfirmarCadastroUser.addEventListener("click", async () => {
-        const nome = document.getElementById("input-user-nome").value;
-        const cpf = document.getElementById("input-user-cpf").value;
-        const email = document.getElementById("input-user-email").value;
-        const telefone = document.getElementById("input-user-telefone").value;
-        const foto = document.getElementById("input-user-foto").value;
+// RENDERIZA APENAS DENTRO DA SUBTELA DE SOLICITAÇÕES EXISTENTE
+async function listarSolicitacoesPendentesAdmin() {
+    const tbodySolicitacoes = document.getElementById("tbody-solicitacoes-cadastro");
+    const badgeQtd = document.getElementById("badge-qtd-solicitacoes");
+    
+    if (!tbodySolicitacoes) return;
 
-        if (!nome || !email) return alert("Nome e Email são obrigatórios!");
+    try {
+        const querySolicitacoes = await getDocs(collection(db, "solicitacoes_cadastro"));
+        tbodySolicitacoes.innerHTML = "";
+
+        let totalPendentes = 0;
+
+        querySolicitacoes.forEach((docSnap) => {
+            const req = docSnap.data();
+            
+            // Filtra exibindo apenas aquelas que estão aguardando decisão
+            if (req.status !== "Pendente") return;
+            totalPendentes++;
+
+            const tipoPedido = req.perfilAcessoSolicitado === "renovacao" ? "Renovação" : "Novo Leitor";
+
+            const linha = `
+                <tr>
+                    <td><strong>${req.nome}</strong></td>
+                    <td>${req.cpf}</td>
+                    <td>${req.email}</td>
+                    <td>${req.telefone}</td>
+                    <td><span class="book-tag">${tipoPedido}</span></td>
+                    <td>
+                        <button class="action-icon" style="color: #10b981; margin-right: 12px; background: none; border: none; cursor: pointer;" onclick="decidirSolicitacao('${docSnap.id}', true)" title="Aprovar"><i data-lucide="check" style="width: 18px; height: 18px;"></i></button>
+                        <button class="action-icon" style="color: #ef4444; background: none; border: none; cursor: pointer;" onclick="decidirSolicitacao('${docSnap.id}', false)" title="Recusar"><i data-lucide="x" style="width: 18px; height: 18px;"></i></button>
+                    </td>
+                </tr>
+            `;
+            tbodySolicitacoes.insertAdjacentHTML("beforeend", linha);
+        });
+
+        // Atualiza dinamicamente o contador numérico da aba amarela
+        if (badgeQtd) {
+            badgeQtd.innerText = totalPendentes;
+        }
+
+        if (totalPendentes === 0) {
+            tbodySolicitacoes.innerHTML = "<tr><td colspan='6' style='text-align: center; color: var(--muted-foreground); padding: 20px 0;'>Nenhuma solicitação de cadastro pendente.</td></tr>";
+        }
+
+        if (typeof lucide !== "undefined") lucide.createIcons();
+
+    } catch (error) {
+        console.error("Erro ao buscar solicitações do banco:", error);
+    }
+}
+
+// ==========================================================================
+// CADASTRO DE USUÁRIO COM VALIDAÇÃO ANTI-DUPLICAÇÃO
+// ==========================================================================
+const btnConfirmarCadastroUser = document.getElementById("btn-confirmar-cadastro-user");
+
+if (btnConfirmarCadastroUser) {
+    btnConfirmarCadastroUser.addEventListener("click", async (e) => {
+        e.preventDefault();
+
+        const nome = document.getElementById("input-user-nome")?.value.trim();
+        const cpf = document.getElementById("input-user-cpf")?.value.trim();
+        const email = document.getElementById("input-user-email")?.value.trim().toLowerCase();
+        const telefone = document.getElementById("input-user-telefone")?.value.trim();
+        const perfil = document.getElementById("select-user-perfil")?.value;
+        const foto = document.getElementById("input-user-foto")?.value.trim();
+
+        if (!nome || !email || !cpf) {
+            alert("Preencha ao menos Nome, CPF e E-mail.");
+            return;
+        }
 
         try {
+            // VERIFICAÇÃO ANTI-DUPLICAÇÃO NO FIRESTORE
+            const queryExistentes = await getDocs(collection(db, "usuarios"));
+            let duplicado = false;
+            let motivoDuplicado = "";
+
+            queryExistentes.forEach((docSnap) => {
+                const user = docSnap.data();
+                const emailExistente = user.email ? user.email.trim().toLowerCase() : "";
+                const cpfExistente = user.cpf ? user.cpf.trim() : "";
+
+                if (emailExistente === email) {
+                    duplicado = true;
+                    motivoDuplicado = "Já existe um usuário cadastrado com este E-mail.";
+                } else if (cpfExistente === cpf && cpf !== "") {
+                    duplicado = true;
+                    motivoDuplicado = "Já existe um usuário cadastrado com este CPF.";
+                }
+            });
+
+            if (duplicado) {
+                alert(`Cadastro negado! ${motivoDuplicado}`);
+                return;
+            }
+
+            // SALVA NO BANCO CASO NÃO SEJA DUPLICADO
             await addDoc(collection(db, "usuarios"), {
-                nome, cpf, email, telefone, foto,
+                nome,
+                cpf,
+                email,
+                telefone: telefone || "",
+                tipoUser: perfil || "leitor",
+                foto: foto || "",
                 status: "Ativo",
-                tipoUser: "leitor",
                 dataCadastro: new Date()
             });
-            alert("Leitor cadastrado com sucesso!");
-            alternarFormUsuario(false);
-            listarUsuariosBanco();
-            carregarMétricasDashboard();
-        } catch (error) { console.error("Erro ao cadastrar usuário:", error); }
+
+            alert(`Usuário ${nome} (${perfil}) cadastrado com sucesso!`);
+
+            // Limpa o formulário
+            document.getElementById("input-user-nome").value = "";
+            document.getElementById("input-user-cpf").value = "";
+            document.getElementById("input-user-email").value = "";
+            document.getElementById("input-user-telefone").value = "";
+            document.getElementById("input-user-foto").value = "";
+
+            if (typeof window.alternarFormUsuario === "function") {
+                window.alternarFormUsuario(false);
+            }
+
+            // Recarrega as tabelas separadas
+            await listarUsuariosBanco();
+
+        } catch (error) {
+            console.error("Erro ao cadastrar usuário:", error);
+            alert("Erro ao salvar dados no banco de dados.");
+        }
     });
 }
 
 // ==========================================================================
-// INICIALIZAÇÃO AUTOMÁTICA GERAL
+// INICIALIZAÇÃO AUTOMÁTICA GERAL EM BLOCOS ISOLADOS (ANTI-TRAVAMENTO)
 // ==========================================================================
 document.addEventListener("DOMContentLoaded", () => {
-    carregarMétricasDashboard();
-    listarAcervoBanco();
-    listarEmprestimosBanco();
-    listarUsuariosBanco();
-    listarEmprestimosParaDevolucao();
-    listarReservasBanco();
+    // Executa cada bloco em paralelo. Se um falhar, não quebra os outros.
+    try { carregarMétricasDashboard(); } catch(e) { console.error(e); }
+    try { listarAcervoBanco(); } catch(e) { console.error(e); }
+    try { listarEmprestimosBanco(); } catch(e) { console.error(e); }
+    try { listarUsuariosBanco(); } catch(e) { console.error(e); } // Força o carregamento inicial
+    try { listarEmprestimosParaDevolucao(); } catch(e) { console.error(e); }
+    try { listarReservasBanco(); } catch(e) { console.error(e); }
 });

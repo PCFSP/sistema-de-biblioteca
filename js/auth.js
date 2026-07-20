@@ -53,39 +53,50 @@ if (formLogin) {
 }
 
 // ==========================================================================
-// 2. ENVIO DE SOLICITAÇÃO DE CADASTRO PARA O BANCO
+// VALIDAÇÃO E ENVIO DA SOLICITAÇÃO DE CADASTRO CORRIGIDA
 // ==========================================================================
-const formCadastro = document.querySelector("#tela-cadastro form");
+const formCadastro = document.getElementById("form-solicitar-cadastro");
 
 if (formCadastro) {
     formCadastro.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const nome = document.getElementById("cad-nome").value;
-        const email = document.getElementById("cad-email").value;
-        const crb = document.getElementById("cad-crb").value;
-        const cargo = document.getElementById("cad-cargo").value;
-        const mensagem = document.getElementById("cad-mensagem").value;
+        const nome = document.getElementById("cad-nome").value.trim();
+        const email = document.getElementById("cad-email").value.trim().toLowerCase();
+        const cpf = document.getElementById("cad-cpf").value.trim();
+        const telefone = document.getElementById("cad-telefone").value.trim();
+        const perfil = document.getElementById("cad-perfil").value;
+        const foto = document.getElementById("cad-foto").value.trim();
+        const mensagem = document.getElementById("cad-mensagem").value.trim();
+
+        if (nome.split(" ").length < 2) {
+            alert("Por favor, insira seu nome completo (Nome e Sobrenome).");
+            return;
+        }
 
         try {
-            // Salva o pedido em uma coleção de triagem chamada 'solicitacoes_cadastro'
             await addDoc(collection(db, "solicitacoes_cadastro"), {
                 nome,
                 email,
-                crb: crb || "Não informado",
-                cargoPretendido: cargo,
-                mensagem: mensagem || "",
+                cpf,
+                telefone,
+                perfilAcessoSolicitado: perfil,
+                fotoPerfilUrl: foto || "",
+                mensagemAdmin: mensagem || "",
                 status: "Pendente",
                 dataSolicitacao: new Date()
             });
 
-            alert("Solicitação enviada com sucesso! Aguarde a análise do administrador.");
+            alert("Solicitação enviada com sucesso! O administrador analisará seu cadastro.");
             formCadastro.reset();
-            mostrarTelaLogin("login"); // Volta para a tela de login inicial
+            
+            if (typeof window.mostrarTelaLogin === "function") {
+                window.mostrarTelaLogin("login");
+            }
 
         } catch (error) {
-            console.error("Erro ao enviar solicitação:", error);
-            alert("Erro ao processar o seu cadastro.");
+            console.error("Erro ao registrar solicitação:", error);
+            alert("Ocorreu um problema ao enviar a solicitação.");
         }
     });
 }
