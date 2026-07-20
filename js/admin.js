@@ -295,6 +295,143 @@ if (btnSalvarLivro) {
         }
     });
 }
+// ==========================================================================
+// AUTO-PREENCHIMENTO: HÍBRIDO E ROBUSTO (DEBUGADO)
+// ==========================================================================
+
+window.resultadosCatalogoTemporarios = [];
+
+const inputBusca = document.getElementById("input-busca-catalogo");
+const statusMsg = document.getElementById("autofill-status");
+const resultsContainer = document.getElementById("autofill-results");
+const btnAutofill = document.getElementById("btn-autofill");
+
+if (btnAutofill && inputBusca) {
+    btnAutofill.addEventListener("click", () => executarBusca());
+    inputBusca.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            executarBusca();
+        }
+    });
+}
+
+function executarBusca() {
+    const query = inputBusca ? inputBusca.value.trim() : "";
+    if (!query) return;
+
+    const isbn = query.replace(/[-\s]/g, '');
+    
+    if (/^\d{10,13}$/.test(isbn)) {
+        buscarPorISBN(isbn);
+    } else {
+        buscarPorTitulo(query);
+    }
+}
+
+async function buscarPorISBN(isbn) {
+    if (statusMsg) statusMsg.textContent = "Buscando ISBN...";
+    
+    // 1. Tenta Brasil API
+    try {
+        const resp = await fetch(`https://brasilapi.com.br/api/isbn/v1/${isbn}`);
+        if (resp.ok) {
+            const livro = await resp.json();
+            salvarResultado([{
+                title: livro.title,
+                authors: livro.authors,
+                year: livro.year,
+                publisher: livro.publisher,
+                isbn: livro.isbn || isbn, // Garante que pegue o ISBN de retorno
+                cover: livro.cover_url || ''
+            }]);
+            return;
+        }
+    } catch (e) { console.error("Brasil API falhou:", e); }
+
+    // 2. Tenta Open Library
+    try {
+        const resp = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`);
+        const data = await resp.json();
+        const livro = data[`ISBN:${isbn}`];
+        
+        if (livro) {
+            salvarResultado([{
+                title: livro.title,
+                authors: livro.authors?.map(a => a.name),
+                year: livro.publish_date?.substring(livro.publish_date.length - 4),
+                publisher: livro.publishers?.map(p => p.name)[0],
+                isbn: isbn,
+                cover: livro.cover?.medium || ''
+            }]);
+            return;
+        }
+    } catch (e) { console.error("Open Library ISBN falhou:", e); }
+
+    if (statusMsg) statusMsg.textContent = "ISBN não encontrado.";
+}
+
+async function buscarPorTitulo(query) {
+    if (statusMsg) statusMsg.textContent = "Buscando título...";
+    try {
+        const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=5`;
+        const resp = await fetch(url);
+        const data = await resp.json();
+        
+        if (data.docs && data.docs.length > 0) {
+            const lista = data.docs.map(livro => {
+                // DEBUG: veja o que vem no console
+                console.log("Dados recebidos da API:", livro);
+                
+                return {
+                    title: livro.title,
+                    authors: livro.author_name,
+                    year: livro.first_publish_year,
+                    publisher: livro.publisher ? livro.publisher[0] : "",
+                    // Pega o primeiro ISBN disponível ou uma string vazia
+                    isbn: (livro.isbn && livro.isbn.length > 0) ? livro.isbn[0] : "",
+                    cover: livro.cover_i ? `https://covers.openlibrary.org/b/id/${livro.cover_i}-M.jpg` : ''
+                };
+            });
+            salvarResultado(lista);
+        } else {
+            if (statusMsg) statusMsg.textContent = "Nenhum livro encontrado.";
+        }
+    } catch (e) { console.error("Falha Título:", e); }
+}
+
+function salvarResultado(lista) {
+    window.resultadosCatalogoTemporarios = lista;
+    let html = "";
+    lista.forEach((item, index) => {
+        html += `
+            <div class="autofill-result-item">
+                <img src="${item.cover || 'https://via.placeholder.com/40x60?text=Sem+Capa'}" class="autofill-result-img" alt="Capa">
+                <div class="autofill-result-info">
+                    <span class="autofill-result-title">${item.title}</span>
+                    <span class="autofill-result-details">${item.authors ? item.authors.join(', ') : 'Autor desconhecido'}</span>
+                    <span style="font-size: 10px; color: #666; display:block;">ISBN: ${item.isbn || 'Não encontrado'}</span>
+                </div>
+                <button type="button" class="autofill-select-btn" onclick="selecionarOpcaoHibrida(${index})">Selecionar</button>
+            </div>
+        `;
+    });
+    if (resultsContainer) resultsContainer.innerHTML = html;
+    if (statusMsg) statusMsg.textContent = "Selecione:";
+}
+
+window.selecionarOpcaoHibrida = function(index) {
+    const item = window.resultadosCatalogoTemporarios[index];
+    document.getElementById("input-livro-titulo").value = item.title || '';
+    document.getElementById("input-livro-autor").value = item.authors ? item.authors.join(', ') : '';
+    document.getElementById("input-livro-ano").value = item.year || '';
+    document.getElementById("input-livro-editora").value = item.publisher || '';
+    document.getElementById("input-livro-isbn").value = item.isbn || '';
+    document.getElementById("input-livro-capa").value = item.cover || '';
+    
+    if (resultsContainer) resultsContainer.innerHTML = "";
+    if (statusMsg) statusMsg.textContent = "✓ Preenchido!";
+};
 
 // ==========================================================================
 // 3. TELA: EMPRÉSTIMOS
