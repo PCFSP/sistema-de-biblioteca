@@ -1341,3 +1341,97 @@ button.avatar-circle {
         gap: 0 20px;
     }
 }
+/* ==========================================================================
+   17. DROPDOWN DE NOTIFICAÇÕES (sino no cabeçalho)
+   ========================================================================== */
+.notif-menu {
+    position: relative;
+}
+
+.dropdown-notificacoes {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 320px;
+    max-height: 380px;
+    overflow-y: auto;
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    padding: 16px;
+    z-index: 200;
+}
+
+.notificacoes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.notificacoes-header h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--foreground);
+}
+
+.notificacoes-lista {
+    display: flex;
+    flex-direction: column;
+}
+
+.notificacao-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 6px;
+    border-radius: 6px;
+    border-bottom: 1px solid var(--border);
+}
+
+.notificacao-item:last-child {
+    border-bottom: none;
+}
+
+.notificacao-item:hover {
+    background-color: var(--muted);
+}
+
+.notificacao-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+}
+
+.dot-vermelho {
+    background-color: var(--danger-text);
+}
+
+.dot-verde {
+    background-color: var(--success-text);
+}
+
+.dot-azul {
+    background-color: #2563eb;
+}
+
+.dot-amarelo {
+    background-color: var(--warning-text);
+}
+
+.notificacao-conteudo p {
+    font-size: 13px;
+    color: var(--foreground);
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+.notificacao-time {
+    font-size: 12px;
+    color: var(--muted-foreground);
+}
