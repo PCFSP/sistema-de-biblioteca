@@ -53,49 +53,64 @@
         </div>
     </div>
 
-    <!-- ================= TELA: SOLICITAR CADASTRO ================= -->
-    <div id="tela-cadastro" class="login-container" style="display: none;">
+<!-- ================= TELA: SOLICITAR CADASTRO ================= -->
+    <div id="tela-cadastro" class="login-container login-container-wide" style="display: none;">
         <div class="login-header">
             <div class="login-logo-box">
                 <i data-lucide="book-open"></i>
             </div>
             <h2>Solicitar Cadastro</h2>
-            <p>Sua solicitação será analisada pelo administrador</p>
+            <p>Apenas para novos leitores ou renovação de cadastros bloqueados</p>
         </div>
 
-        <form onsubmit="event.preventDefault();">
-            <div class="input-group">
-                <label for="cad-nome">Nome completo</label>
-                <input type="text" id="cad-nome" placeholder="Ex: Ricardo Alves" required>
+        <form id="form-solicitar-cadastro" class="form-grid-two-columns">
+            <div class="form-column">
+                <div class="input-group">
+                    <label for="cad-nome">Nome completo</label>
+                    <input type="text" id="cad-nome" placeholder="Ex: Ricardo Alves" minlength="3" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="cad-email">E-mail institucional</label>
+                    <input type="email" id="cad-email" placeholder="seu@email.com" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="cad-cpf">CPF</label>
+                    <input type="text" id="cad-cpf" placeholder="000.000.000-00" maxlength="14" pattern="\d{3}\.\d{3}\.\d{3}-\d{2}" title="Digite o CPF no formato 000.000.000-00" required>
+                </div>
             </div>
 
-            <div class="input-group">
-                <label for="cad-email">E-mail institucional</label>
-                <input type="email" id="cad-email" placeholder="seu@email.com" required>
+            <div class="form-column">
+                <div class="input-group">
+                    <label for="cad-telefone">Telefone</label>
+                    <input type="text" id="cad-telefone" placeholder="(00) 00000-0000" maxlength="15" pattern="\(\d{2}\)\s\d{5}-\d{4}" title="Digite o telefone no formato (00) 00000-0000" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="cad-perfil">Perfil de acesso solicitado</label>
+                    <select id="cad-perfil" class="select-input" required>
+                        <option value="leitor">Novo Leitor</option>
+                        <option value="renovacao">Renovação de Cadastro Bloqueado</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="cad-foto">URL da Foto de Perfil (opcional)</label>
+                    <input type="url" id="cad-foto" placeholder="https://exemplo.com/sua-foto.jpg">
+                </div>
             </div>
 
-            <div class="input-group">
-                <label for="cad-crb">Número do CRB (opcional)</label>
-                <input type="text" id="cad-crb" placeholder="Ex: CRB-8 nº 9812">
-            </div>
+            <div class="form-full-width" style="grid-column: span 2; width: 100%;">
+                <div class="input-group">
+                    <label for="cad-mensagem">Mensagem (opcional)</label>
+                    <textarea id="cad-mensagem" class="textarea-input" placeholder="Informe o motivo ou contexto da sua solicitação..."></textarea>
+                </div>
 
-            <div class="input-group">
-                <label for="cad-cargo">Cargo solicitado</label>
-                <select id="cad-cargo" class="select-input">
-                    <option value="leitor">Novo Leitor</option>
-                    <option value="bibliotecario">Bibliotecário</option>
-                    <option value="renovacao">Renovação de Cadastro Bloqueado</option>
-                </select>
+                <button type="submit" class="btn-primary btn-block btn-with-icon">
+                    <i data-lucide="send" class="icon-small"></i> Enviar solicitação
+                </button>
             </div>
-
-            <div class="input-group">
-                <label for="cad-mensagem">Mensagem (opcional)</label>
-                <textarea id="cad-mensagem" class="textarea-input" placeholder="Informe o motivo ou contexto do seu cadastro..."></textarea>
-            </div>
-
-            <button type="submit" class="btn-primary btn-block btn-with-icon">
-                <i data-lucide="send" class="icon-small"></i> Enviar solicitação
-            </button>
         </form>
 
         <div class="login-footer">

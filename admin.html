@@ -351,6 +351,7 @@
             <!-- ================= TELA: USUÁRIOS ================= -->
             <div id="tela-usuarios" class="aba-conteudo" style="display: none;">
                 <div class="table-controls table-controls-usuarios">
+                    <!-- Subnavegação Unificada de Usuários -->
                     <div class="sub-nav-buttons">
                         <button class="btn-subnav active" id="btn-tab-leitores" onclick="alternarAbaUsuarios('leitores', this)">
                             <i data-lucide="book-open" class="icon-small"></i> Leitores
@@ -359,14 +360,15 @@
                             <i data-lucide="briefcase" class="icon-small"></i> Funcionários
                         </button>
                         <button class="btn-subnav" id="btn-tab-solicitacoes" onclick="alternarAbaUsuarios('solicitacoes', this)">
-                            <i data-lucide="inbox" class="icon-small"></i> Solicitações <span class="badge-count" id="badge-solicitacoes">0</span>
+                            <i data-lucide="inbox" class="icon-small"></i> Solicitações 
+                            <span id="badge-qtd-solicitacoes" class="badge-count" style="background: var(--primary); color: #fff; padding: 2px 6px; border-radius: 10px; font-size: 11px; margin-left: 4px;">0</span>
                         </button>
                     </div>
                     <button class="btn-primary" onclick="alternarFormUsuario(true)">+ Novo Usuário</button>
                 </div>
 
                 <!-- Formulário de Registro de Usuário -->
-                <div id="form-registro-usuario" class="section-card" style="display: none; position: relative;">
+                <div id="form-registro-usuario" class="section-card" style="display: none; position: relative; margin-bottom: 20px;">
                     <h3 style="font-size: 18px; margin-bottom: 20px;">Registrar Usuário</h3>
                     <form>
                         <div class="input-group">
@@ -419,11 +421,7 @@
                             <thead>
                                 <tr><th>Nome</th><th>CPF</th><th>Email</th><th>Telefone</th><th>Status</th><th>Perfil</th><th>Ações</th></tr>
                             </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="7" style="text-align: center; color: var(--muted-foreground);">Carregando leitores do Firebase...</td>
-                                </tr>
-                            </tbody>
+                            <tbody id="tbody-usuarios-ativos"></tbody>
                         </table>
                     </div>
                 </div>
@@ -433,13 +431,9 @@
                     <div class="admin-table-container">
                         <table class="admin-table">
                             <thead>
-                                <tr><th>Nome</th><th>Cargo / Perfil</th><th>Email</th><th>Último Acesso</th><th>Status</th><th>Ações</th></tr>
+                                <tr><th>Nome</th><th>CPF</th><th>Email</th><th>Telefone</th><th>Status</th><th>Perfil</th><th>Ações</th></tr>
                             </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="6" style="text-align: center; color: var(--muted-foreground);">Carregando funcionários do Firebase...</td>
-                                </tr>
-                            </tbody>
+                            <tbody id="tbody-funcionarios-ativos"></tbody>
                         </table>
                     </div>
                 </div>
@@ -449,12 +443,10 @@
                     <div class="admin-table-container">
                         <table class="admin-table">
                             <thead>
-                                <tr><th>Solicitante</th><th>Tipo de Solicitação</th><th>Data</th><th>Status</th><th>Ações</th></tr>
+                                <tr><th>Nome</th><th>CPF</th><th>E-mail</th><th>Telefone</th><th>Pedido</th><th>Ações</th></tr>
                             </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="5" style="text-align: center; color: var(--muted-foreground);">Carregando solicitações do Firebase...</td>
-                                </tr>
+                            <tbody id="tbody-solicitacoes-cadastro">
+                                <tr><td colspan="6" style="text-align: center; color: var(--muted-foreground);">Carregando solicitações...</td></tr>
                             </tbody>
                         </table>
                     </div>
