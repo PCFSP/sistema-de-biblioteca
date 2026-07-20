@@ -1329,3 +1329,15 @@ button.avatar-circle {
     height: 18px;
     flex-shrink: 0;
 }
+
+@media (min-width: 768px) {
+    .login-container-wide {
+        max-width: 750px !important;
+        width: 100%;
+    }
+    .form-grid-two-columns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 20px;
+    }
+}
