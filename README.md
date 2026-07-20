@@ -10,7 +10,7 @@ Este projeto foi desenvolvido de forma colaborativa por:
 
 * **Heitor** — [@heitor-polvere](https://github.com/heitor-polvere)
   * Responsável por: Estruturação das interfaces do Administrador e do Bibliotecário, e regras de negócio para cálculo de multas.
-  * **Igor** — [@IgorSamuel48](https://github.com/IgorSamuel48)
+* **Igor** — [@IgorSamuel48](https://github.com/IgorSamuel48)
   * Responsável por: Arquitetura de banco de dados (Firebase), validações de segurança/rotas, sistema de triagem de cadastros e regra anti-duplicação.
 * **João Eduardo** — [@nowhere02](https://github.com/nowhere02)
   * Responsável por: Desenvolvimento da página inicial pública, área de busca de acervo do leitor e estilização geral responsiva (CSS) e APi´s.
