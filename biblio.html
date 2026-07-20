@@ -86,10 +86,23 @@
                         <i data-lucide="sun" id="theme-icon"></i>
                     </button>
 
-                    <button class="action-icon btn-notification">
-                        <i data-lucide="bell"></i>
-                        <span class="notification-badge"></span>
-                    </button>
+                    <div class="notif-menu">
+                        <button class="action-icon btn-notification" onclick="toggleNotificacoes(event)" title="Notificações">
+                            <i data-lucide="bell"></i>
+                            <span class="notification-badge"></span>
+                        </button>
+
+                        <div id="dropdown-notificacoes" class="dropdown-notificacoes" style="display: none;">
+                            <div class="notificacoes-header">
+                                <h4>Notificações</h4>
+                                <button type="button" class="btn-close-form" onclick="fecharNotificacoes()">✕</button>
+                            </div>
+
+                            <div class="notificacoes-lista" id="lista-notificacoes">
+                                <p style="text-align: center; color: var(--muted-foreground); font-size: 13px; padding: 16px 0;">Carregando notificações...</p>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="user-menu">
                         <button class="avatar-circle" onclick="toggleMenuPerfil(event)" title="Meu Perfil">...</button>
