@@ -29,6 +29,107 @@ function tratarData(dataBanco) {
 }
 
 // ==========================================================================
+// CARREGAR NOTIFICAÇÕES DO LEITOR VIA FIREBASE
+// ==========================================================================
+async function carregarNotificacoesLeitor() {
+    const listaContainer = document.getElementById("lista-notificacoes");
+    const badge = document.getElementById("badge-notificacoes");
+    if (!listaContainer) return;
+
+    try {
+        const queryEmprestimos = await getDocs(collection(db, "emprestimos"));
+        const queryReservas = await getDocs(collection(db, "reservas"));
+        const queryConfig = await getDocs(collection(db, "configuracao"));
+        
+        let valorMultaDiaria = 1.50;
+        if (!queryConfig.empty) {
+            valorMultaDiaria = parseFloat(queryConfig.docs[0].data().valor_multa_diaria) || 1.50;
+        }
+
+        let notificacoes = [];
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+
+        // 1. Círculo Verde: Reserva de livros disponíveis para retirada
+        queryReservas.forEach((docSnap) => {
+            const res = docSnap.data();
+            if (res.Usuario_idUsuario === LEITOR_LOGADO) {
+                if (res.status === "Disponível para retirada" || res.status === "Disponível") {
+                    notificacoes.push({
+                        tipo: 'verde',
+                        texto: `<strong>Reserva Disponível:</strong> O livro "${res.Livro_idLivro}" já está separado e disponível para retirada na biblioteca!`,
+                        tempo: res.data_reserva || 'Recentemente'
+                    });
+                }
+            }
+        });
+
+        // 2. Círculos Azul e Amarelo: Empréstimos (Multas aplicadas e Alertas de vencimento)
+        queryEmprestimos.forEach((docSnap) => {
+            const emp = docSnap.data();
+            if (emp.Usuario_idUsuario === LEITOR_LOGADO && emp.status !== "Devolvido") {
+                const livro = emp.Exemplar_idExemplar || "Livro";
+                const dPrevista = tratarData(emp.data_devolucao_prevista);
+                dPrevista.setHours(0, 0, 0, 0);
+
+                const diferencaDias = Math.ceil((dPrevista.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+
+                // Círculo Azul: Nova multa aplicada (Empréstimo em atraso)
+                if (emp.status === "Atrasado" || diferencaDias < 0) {
+                    const diasAtraso = Math.abs(diferencaDias) || 1;
+                    const valorMulta = (diasAtraso * valorMultaDiaria).toFixed(2).replace('.', ',');
+                    notificacoes.push({
+                        tipo: 'azul',
+                        texto: `<strong>Nova Multa Aplicada:</strong> O prazo do livro "${livro}" expirou. Multa atual acumulada em R$ ${valorMulta}.`,
+                        tempo: 'Atrasado'
+                    });
+                } 
+                // Círculo Amarelo: Alerta de vencimento (Vence hoje ou nos próximos 2 dias)
+                else if (diferencaDias >= 0 && diferencaDias <= 2) {
+                    const prazoTexto = diferencaDias === 0 ? "vence <strong>hoje</strong>" : `vence em <strong>${diferencaDias} dia(s)</strong>`;
+                    notificacoes.push({
+                        tipo: 'amarelo',
+                        texto: `<strong>Alerta de Vencimento:</strong> O livro "${livro}" ${prazoTexto}. Lembre-se de renovar ou devolver dentro do prazo.`,
+                        tempo: emp.data_devolucao_prevista || 'Em breve'
+                    });
+                }
+            }
+        });
+
+        // Injeção dos dados no HTML
+        listaContainer.innerHTML = "";
+        if (notificacoes.length === 0) {
+            listaContainer.innerHTML = `<p style="text-align: center; color: var(--muted-foreground); font-size: 13px; padding: 16px 0;">Nenhuma nova notificação no momento.</p>`;
+            if (badge) badge.style.display = 'none';
+        } else {
+            if (badge) {
+                badge.style.display = 'inline-block';
+                badge.innerText = notificacoes.length;
+            }
+
+            notificacoes.forEach(notif => {
+                const classeDot = notif.tipo === 'verde' ? 'dot-verde' : (notif.tipo === 'azul' ? 'dot-azul' : 'dot-amarelo');
+                const itemHTML = `
+                    <div class="notificacao-item">
+                        <div class="notificacao-dot ${classeDot}"></div>
+                        <div class="notificacao-conteudo">
+                            <p>${notif.texto}</p>
+                            <span class="notificacao-time">${notif.tempo}</span>
+                        </div>
+                    </div>
+                `;
+                listaContainer.insertAdjacentHTML("beforeend", itemHTML);
+            });
+        }
+
+    } catch (error) {
+        console.error("Erro ao carregar notificações do leitor:", error);
+        listaContainer.innerHTML = `<p style="text-align: center; color: var(--danger-text); font-size: 13px; padding: 16px 0;">Falha ao carregar alertas.</p>`;
+    }
+}
+
+
+// ==========================================================================
 // CARREGAR DADOS DO PAINEL DO LEITOR (MÉTRICAS, EMPRÉSTIMOS E MULTAS)
 // ==========================================================================
 async function carregarPainelLeitor() {
@@ -274,6 +375,7 @@ document.addEventListener("click", (e) => {
 document.addEventListener("DOMContentLoaded", () => {
     carregarPainelLeitor();
     listarCatalogoLivrosLeitor();
+    carregarNotificacoesLeitor();
 
     // Dinamiza o Avatar e Iniciais superiores com o nome de quem logou de verdade
     const nomeLogado = localStorage.getItem("usuario-logado-nome");
