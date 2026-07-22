@@ -158,8 +158,6 @@ window.prepararEdicaoLivro = async function(id) {
 // ==========================================================================
 async function carregarMétricasDashboard() {
     const containerRecentes = document.getElementById("container-emprestimos-recentes");
-    
-    // Tenta capturar o container do painel admin, se não houver, adquire o ID do painel biblio
     const containerMultas = document.getElementById("container-alertas-multa") || document.getElementById("container-alertas-devolucao");
     
     try {
@@ -171,7 +169,6 @@ async function carregarMétricasDashboard() {
         let htmlRecentes = "";
         let htmlMultas = "";
 
-        // Tenta buscar o valor configurado pelo admin no banco, se não existir assume 1.50
         let valorMultaDiaria = 1.50; 
         const queryConfig = await getDocs(collection(db, "configuracao"));
         if (!queryConfig.empty) {
@@ -179,42 +176,46 @@ async function carregarMétricasDashboard() {
             valorMultaDiaria = parseFloat(config.valor_multa_diaria) || 1.50;
         }
 
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+
         queryEmprestimos.forEach((docSnap) => {
             const emp = docSnap.data();
             if (emp.status === "Devolvido") return;
 
-            const leitor = (emp.Usuario_idUsuario && emp.Usuario_idUsuario.length > 15) ? "Fernando Ribeiro" : (emp.Usuario_idUsuario || "Desconhecido");
-            const livro = (emp.Exemplar_idExemplar && emp.Exemplar_idExemplar.length > 15) ? "Dom Casmurro" : (emp.Exemplar_idExemplar || "Livro Não Informado");
+            const leitor = emp.Usuario_idUsuario || "Desconhecido";
+            const livro = emp.Exemplar_idExemplar || "Livro Não Informado";
             
-            // Conversão segura da data prevista
             let dataDevPrevista = tratarData(emp.data_devolucao_prevista);
+            let dataDevCompara = new Date(dataDevPrevista);
+            dataDevCompara.setHours(0, 0, 0, 0);
 
-            if (emp.status === "Atrasado") {
+            // Verificação em tempo real se o item está atrasado
+            const estaAtrasado = hoje > dataDevCompara || emp.status === "Atrasado";
+
+            if (estaAtrasado) {
                 totalAtrasados++;
 
-                const hoje = new Date();
-                hoje.setHours(0,0,0,0);
-                dataDevPrevista.setHours(0,0,0,0);
-
-                const diferencaTempo = hoje.getTime() - dataDevPrevista.getTime();
+                const diferencaTempo = hoje.getTime() - dataDevCompara.getTime();
                 const diasAtraso = Math.max(1, Math.ceil(diferencaTempo / (1000 * 60 * 60 * 24)));
                 const valorCalculado = (diasAtraso * valorMultaDiaria).toFixed(2).replace('.', ',');
 
                 htmlMultas += `
                     <div class="alert-card-danger" style="margin-bottom: 8px;">
                         <div class="alert-row"><strong>${leitor}</strong><strong>R$ ${valorCalculado}</strong></div>
-                        <p class="alert-subtitle">${livro} — ${diasAtraso} dias de atraso</p>
+                        <p class="alert-subtitle">${livro} — ${diasAtraso} dia(s) de atraso</p>
                     </div>
                 `;
             }
 
-            const statusTag = emp.status === "Atrasado" ? "danger" : "success";
+            const statusTag = estaAtrasado ? "danger" : "success";
+            const statusTexto = estaAtrasado ? "Atrasado" : (emp.status || "Em andamento");
             const dataExibicao = dataDevPrevista.toLocaleDateString('pt-BR');
 
             htmlRecentes += `
                 <div class="list-item">
                     <div><h4>${livro}</h4><p>${leitor} - devolução ${dataExibicao}</p></div>
-                    <span class="status-tag ${statusTag}">${emp.status || "Em andamento"}</span>
+                    <span class="status-tag ${statusTag}">${statusTexto}</span>
                 </div>
             `;
         });
@@ -266,7 +267,7 @@ async function listarAcervoBanco() {
                     <td>${livro.autor || "Desconhecido"}</td>
                     <td><span class="book-tag">${livro.categoria_idCategoria || "Geral"}</span></td>
                     <td>${livro.isbn || "-"}</td>
-                    <td>1</td>
+                    <td><strong>${livro.quantidade || 1}</strong></td>
                     <td><span class="status-tag success">Disponível</span></td>
                     <td>
                         <button class="action-icon" onclick="prepararEdicaoLivro('${doc.id}')" title="Editar"><i data-lucide="pencil" class="icon-small"></i></button>
@@ -283,38 +284,72 @@ async function listarAcervoBanco() {
 }
 
 const btnSalvarLivro = document.getElementById("btn-salvar-livro");
+
 if (btnSalvarLivro) {
     btnSalvarLivro.addEventListener("click", async () => {
-        const titulo = document.getElementById("input-livro-titulo").value;
-        const autor = document.getElementById("input-livro-autor").value;
-        const editora = document.getElementById("input-livro-editora").value;
-        const ano = document.getElementById("input-livro-ano").value;
-        const isbn = document.getElementById("input-livro-isbn").value;
-        const capa = document.getElementById("input-livro-capa").value;
+        const titulo = document.getElementById("input-livro-titulo")?.value.trim();
+        const autor = document.getElementById("input-livro-autor")?.value.trim();
+        const editora = document.getElementById("input-livro-editora")?.value.trim();
+        const ano = document.getElementById("input-livro-ano")?.value.trim();
+        const isbn = document.getElementById("input-livro-isbn")?.value.trim();
+        const capa = document.getElementById("input-livro-capa")?.value.trim();
+        const genero = document.getElementById("input-livro-genero")?.value || "Geral";
+        const quantidade = parseInt(document.getElementById("input-livro-quantidade")?.value) || 1;
 
         if (!titulo || !autor) return mostrarNotificacao("Preencha Título e Autor!", "warning");
 
-        const dadosLivro = {
-            titulo, autor, editora, isbn, capa,
-            ano_publicacao: parseInt(ano) || null,
-            categoria_idCategoria: "Geral"
-        };
-
         try {
+            // TRAVA ANTI-DUPLICIDADE DE LIVRO (Se não for edição)
+            if (!btnSalvarLivro.dataset.editId) {
+                const queryLivros = await getDocs(collection(db, "books"));
+                let livroExistente = false;
+
+                queryLivros.forEach((docSnap) => {
+                    const l = docSnap.data();
+                    const isbnExistente = l.isbn ? l.isbn.trim() : "";
+                    const tituloExistente = l.titulo ? l.titulo.trim().toLowerCase() : "";
+                    const autorExistente = l.autor ? l.autor.trim().toLowerCase() : "";
+
+                    // Compara por ISBN ou por Título + Autor idênticos
+                    if ((isbn && isbnExistente === isbn) || (tituloExistente === titulo.toLowerCase() && autorExistente === autor.toLowerCase())) {
+                        livroExistente = true;
+                    }
+                });
+
+                if (livroExistente) {
+                    mostrarNotificacao("Este livro já está cadastrado no acervo!", "warning");
+                    return;
+                }
+            }
+
+            const dadosLivro = {
+                titulo, 
+                autor, 
+                editora, 
+                isbn, 
+                capa,
+                ano_publicacao: parseInt(ano) || null,
+                categoria_idCategoria: genero,
+                quantidade: quantidade
+            };
+
             if (btnSalvarLivro.dataset.editId) {
                 await updateDoc(doc(db, "books", btnSalvarLivro.dataset.editId), dadosLivro);
-                mostrarNotificacao("Livro atualizado com sucesso!", "sucess");
+                mostrarNotificacao("Livro atualizado com sucesso!", "success");
                 delete btnSalvarLivro.dataset.editId;
                 btnSalvarLivro.innerText = "+ Salvar Livro";
             } else {
                 await addDoc(collection(db, "books"), dadosLivro);
-                mostrarNotificacao("Livro cadastrado com sucesso.", "sucess");
+                mostrarNotificacao("Livro cadastrado com sucesso!", "success");
             }
+
             navegar("acervo");
             listarAcervoBanco();
             carregarMétricasDashboard();
+
         } catch (error) {
-            console.error(error);
+            console.error("Erro ao salvar livro:", error);
+            mostrarNotificacao("Erro ao salvar o livro no banco.", "error");
         }
     });
 }
@@ -457,26 +492,52 @@ window.selecionarOpcaoHibrida = function(index) {
 };
 
 // ==========================================================================
-// 3. TELA: EMPRÉSTIMOS
+// 3. TELA: EMPRÉSTIMOS (AUTO-PREENCHIMENTO, RENOVAÇÃO E STATUS CORRIGIDO)
 // ==========================================================================
+
+// Preenche a data de hoje e +7 dias automaticamente ao abrir/carregar os campos
+function inicializarDatasEmprestimo() {
+    const inputRetirada = document.getElementById("input-emprestimo-retirada");
+    const inputDevolucao = document.getElementById("input-emprestimo-devolucao");
+
+    if (inputRetirada && inputDevolucao) {
+        const hoje = new Date();
+        const devolucaoPadrao = new Date();
+        devolucaoPadrao.setDate(hoje.getDate() + 7);
+
+        // Preenche apenas se estiverem vazios
+        if (!inputRetirada.value) {
+            inputRetirada.value = hoje.toLocaleDateString('pt-BR');
+        }
+        if (!inputDevolucao.value) {
+            inputDevolucao.value = devolucaoPadrao.toLocaleDateString('pt-BR');
+        }
+    }
+}
+
 async function carregarSelectsEmprestimo() {
     const selectLeitor = document.getElementById("select-emprestimo-leitor");
     const selectLivro = document.getElementById("select-emprestimo-livro");
+    
+    inicializarDatasEmprestimo(); // Dispara o auto-preenchimento das datas
+
     if (!selectLeitor || !selectLivro) return;
 
     try {
         const usersSnap = await getDocs(collection(db, "usuarios"));
         selectLeitor.innerHTML = '<option value="">Selecionar leitor...</option>';
-        usersSnap.forEach(doc => {
-            selectLeitor.innerHTML += `<option value="${doc.data().nome}">${doc.data().nome}</option>`;
+        usersSnap.forEach(docSnap => {
+            selectLeitor.innerHTML += `<option value="${docSnap.data().nome}">${docSnap.data().nome}</option>`;
         });
 
         const booksSnap = await getDocs(collection(db, "books"));
         selectLivro.innerHTML = '<option value="">Selecionar livro...</option>';
-        booksSnap.forEach(doc => {
-            selectLivro.innerHTML += `<option value="${doc.data().titulo}">${doc.data().titulo}</option>`;
+        booksSnap.forEach(docSnap => {
+            selectLivro.innerHTML += `<option value="${docSnap.data().titulo}">${docSnap.data().titulo}</option>`;
         });
-    } catch (error) { console.error(error); }
+    } catch (error) { 
+        console.error("Erro ao carregar leitores/livros:", error); 
+    }
 }
 
 async function listarEmprestimosBanco() {
@@ -488,16 +549,38 @@ async function listarEmprestimosBanco() {
         const querySnapshot = await getDocs(collection(db, "emprestimos"));
         tbody.innerHTML = "";
 
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+
         querySnapshot.forEach((docSnap) => {
             const emp = docSnap.data();
             if (emp.status === "Devolvido") return;
 
-            const statusTag = emp.status === "Atrasado" ? "danger" : "success";
+            let dataDevPrevista = tratarData(emp.data_devolucao_prevista);
+            let dataDevCompara = new Date(dataDevPrevista);
+            dataDevCompara.setHours(0, 0, 0, 0);
 
-            let dataRetiradaFormatada = emp.data_retirada && typeof emp.data_retirada.toDate === "function" ? emp.data_retirada.toDate().toLocaleDateString('pt-BR') : (emp.data_retirada || "-");
-            let dataDevolucaoFormatada = emp.data_devolucao_prevista && typeof emp.data_devolucao_prevista.toDate === "function" ? emp.data_devolucao_prevista.toDate().toLocaleDateString('pt-BR') : (emp.data_devolucao_prevista || "-");
-            const leitorExibicao = (emp.Usuario_idUsuario && emp.Usuario_idUsuario.length > 15) ? "Fernando Ribeiro" : (emp.Usuario_idUsuario || "Desconhecido");
-            const livroExibicao = (emp.Exemplar_idExemplar && emp.Exemplar_idExemplar.length > 15) ? "Dom Casmurro" : (emp.Exemplar_idExemplar || "Livro Não Informado");
+            // CORREÇÃO DO STATUS DE ATRASO EM TEMPO REAL
+            let statusAtual = emp.status;
+            if (hoje > dataDevCompara) {
+                statusAtual = "Atrasado";
+            }
+
+            const statusTag = statusAtual === "Atrasado" ? "danger" : "success";
+
+            let dataRetiradaFormatada = emp.data_retirada && typeof emp.data_retirada.toDate === "function" 
+                ? emp.data_retirada.toDate().toLocaleDateString('pt-BR') 
+                : (emp.data_retirada || "-");
+
+            let dataDevolucaoFormatada = dataDevPrevista.toLocaleDateString('pt-BR');
+
+            const leitorExibicao = emp.Usuario_idUsuario || "Desconhecido";
+            const livroExibicao = emp.Exemplar_idExemplar || "Livro Não Informado";
+
+            // Botão de renovação (bloqueado se estiver atrasado)
+            let botaoRenovarHTML = statusAtual === "Atrasado" 
+                ? `<button class="action-icon" style="opacity: 0.4; cursor: not-allowed;" title="Bloqueado para renovação (Atrasado)"><i data-lucide="refresh-cw" class="icon-small"></i></button>`
+                : `<button class="action-icon" onclick="renovarEmprestimoAdmin('${docSnap.id}')" title="Renovar +7 dias"><i data-lucide="refresh-cw" class="icon-small"></i></button>`;
 
             const linha = `
                 <tr>
@@ -506,53 +589,146 @@ async function listarEmprestimosBanco() {
                     <td>${dataRetiradaFormatada}</td>
                     <td>${dataDevolucaoFormatada}</td>
                     <td>
-                        <span class="status-tag ${statusTag}" style="cursor:pointer;" onclick="alternarStatusEmprestimo('${docSnap.id}', '${emp.status}')">
-                            ${emp.status || "Em andamento"}
+                        <span class="status-tag ${statusTag}">
+                            ${statusAtual || "Em andamento"}
                         </span>
                     </td>
                     <td>
+                        ${botaoRenovarHTML}
                         <button class="action-icon btn-action-danger" onclick="deletarDocumento('emprestimos', '${docSnap.id}')" title="Excluir"><i data-lucide="trash-2" class="icon-small"></i></button>
                     </td>
                 </tr>
             `;
             tbody.insertAdjacentHTML("beforeend", linha);
         });
+
         if (typeof lucide !== "undefined") lucide.createIcons();
-    } catch (error) { console.error(error); }
+    } catch (error) { 
+        console.error("Erro ao listar empréstimos:", error); 
+    }
 }
 
-window.alternarStatusEmprestimo = async function(id, statusAtual) {
-    const novoStatus = statusAtual === "Atrasado" ? "Em andamento" : "Atrasado";
+// AÇÃO DE RENOVAÇÃO DIRETA PELO ADMIN (+7 DIAS)
+window.renovarEmprestimoAdmin = async function(idEmprestimo) {
+    const confirmou = await confirmarAcao(
+        "Renovar Empréstimo?",
+        "Deseja estender o prazo de devolução por mais 7 dias a partir do prazo atual?",
+        "Sim, renovar"
+    );
+
+    if (!confirmou) return;
+
     try {
-        await updateDoc(doc(db, "emprestimos", id), { status: novoStatus });
+        const docRef = doc(db, "emprestimos", idEmprestimo);
+        const docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) return mostrarNotificacao("Empréstimo não encontrado.", "error");
+
+        const emp = docSnap.data();
+        let dataAtualPrevista = tratarData(emp.data_devolucao_prevista);
+        
+        // Adiciona +7 dias à data prevista existente
+        dataAtualPrevista.setDate(dataAtualPrevista.getDate() + 7);
+
+        await updateDoc(docRef, {
+            data_devolucao_prevista: dataAtualPrevista.toLocaleDateString('pt-BR'),
+            status: "Em andamento"
+        });
+
+        mostrarNotificacao("Empréstimo renovado por mais 7 dias!", "success");
         listarEmprestimosBanco();
         carregarMétricasDashboard();
-    } catch (error) { console.error(error); }
+
+    } catch (error) {
+        console.error("Erro ao renovar empréstimo pelo admin:", error);
+        mostrarNotificacao("Erro ao processar renovação.", "error");
+    }
 };
 
+// SALVAR NOVO EMPRÉSTIMO COM TRAVA MÍNIMA DE 7 DIAS
 const btnConfirmarEmprestimo = document.getElementById("btn-confirmar-emprestimo");
+
 if (btnConfirmarEmprestimo) {
     btnConfirmarEmprestimo.addEventListener("click", async () => {
-        const leitor = document.getElementById("select-emprestimo-leitor").value;
-        const livro = document.getElementById("select-emprestimo-livro").value;
-        const retirada = document.getElementById("input-emprestimo-retirada").value;
-        const devolucao = document.getElementById("input-emprestimo-devolucao").value;
+        const leitor = document.getElementById("select-emprestimo-leitor")?.value;
+        const livro = document.getElementById("select-emprestimo-livro")?.value;
+        const retiradaStr = document.getElementById("input-emprestimo-retirada")?.value;
+        const devolucaoStr = document.getElementById("input-emprestimo-devolucao")?.value;
 
-        if (!leitor || !livro || !retirada || !devolucao) return mostrarNotificacao("Preencha todos os campos obrigatórios.", "warning");
+        if (!leitor || !livro || !retiradaStr || !devolucaoStr) {
+            return mostrarNotificacao("Preencha todos os campos obrigatórios.", "warning");
+        }
+
+        const dRetirada = tratarData(retiradaStr);
+        const dDevolucao = tratarData(devolucaoStr);
+
+        // Calcula a diferença em dias entre devolução e retirada
+        dRetirada.setHours(0, 0, 0, 0);
+        dDevolucao.setHours(0, 0, 0, 0);
+        const diffDias = Math.round((dDevolucao.getTime() - dRetirada.getTime()) / (1000 * 60 * 60 * 24));
+
+        // TRAVA: Impossibilita escolher prazo menor que 7 dias
+        if (diffDias < 7) {
+            return mostrarNotificacao("A data de devolução deve ter no mínimo 7 dias a partir da data de retirada!", "warning");
+        }
 
         try {
+            const queryEmprestimos = await getDocs(collection(db, "emprestimos"));
+            const queryLivros = await getDocs(collection(db, "books"));
+
+            // 1. TRAVA DE LIMITE (MÁX 3 POR LEITOR)
+            let emprestimosAtivosLeitor = 0;
+            queryEmprestimos.forEach((docSnap) => {
+                const emp = docSnap.data();
+                if (emp.Usuario_idUsuario === leitor && emp.status !== "Devolvido") {
+                    emprestimosAtivosLeitor++;
+                }
+            });
+
+            if (emprestimosAtivosLeitor >= 3) {
+                return mostrarNotificacao(`Empréstimo recusado! O leitor ${leitor} já possui 3 empréstimos ativos.`, "warning");
+            }
+
+            // 2. TRAVA DE ESTOQUE DISPONÍVEL
+            let estoqueTotal = 1;
+            queryLivros.forEach((docSnap) => {
+                const l = docSnap.data();
+                if (l.titulo === livro) {
+                    estoqueTotal = parseInt(l.quantidade) || 1;
+                }
+            });
+
+            let exemplaresEmprestados = 0;
+            queryEmprestimos.forEach((docSnap) => {
+                const emp = docSnap.data();
+                if (emp.Exemplar_idExemplar === livro && emp.status !== "Devolvido") {
+                    exemplaresEmprestados++;
+                }
+            });
+
+            if (exemplaresEmprestados >= estoqueTotal) {
+                return mostrarNotificacao(`Empréstimo recusado! Todos os ${estoqueTotal} exemplar(es) de "${livro}" já estão emprestados.`, "warning");
+            }
+
+            // REGISTRO NO FIREBASE
             await addDoc(collection(db, "emprestimos"), {
                 Usuario_idUsuario: leitor,
                 Exemplar_idExemplar: livro,
-                data_retirada: retirada,
-                data_devolucao_prevista: devolucao,
+                data_retirada: retiradaStr,
+                data_devolucao_prevista: devolucaoStr,
                 status: "Em andamento"
             });
-            mostrarNotificacao("Empréstimo Registrado.", "sucess");
-            alternarFormEmprestimo(false);
+
+            mostrarNotificacao("Empréstimo registrado com sucesso!", "success");
+            if (typeof window.alternarFormEmprestimo === "function") window.alternarFormEmprestimo(false);
+            
             listarEmprestimosBanco();
             carregarMétricasDashboard();
-        } catch (error) { console.error(error); }
+
+        } catch (error) {
+            console.error("Erro ao registrar empréstimo:", error);
+            mostrarNotificacao("Erro ao registrar empréstimo no banco de dados.", "error");
+        }
     });
 }
 
@@ -568,6 +744,7 @@ async function listarEmprestimosParaDevolucao() {
         const querySnapshot = await getDocs(collection(db, "emprestimos"));
         tbody.innerHTML = "";
 
+        // Busca o valor atualizado da multa por dia configurado no banco
         let valorMultaDiaria = 1.50; 
         const queryConfig = await getDocs(collection(db, "configuracao"));
         if (!queryConfig.empty) {
@@ -575,40 +752,53 @@ async function listarEmprestimosParaDevolucao() {
             valorMultaDiaria = parseFloat(config.valor_multa_diaria) || 1.50;
         }
 
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+
         querySnapshot.forEach((docSnap) => {
             const emp = docSnap.data();
             
-            let dataRetiradaFormatada = emp.data_retirada && typeof emp.data_retirada.toDate === "function" ? emp.data_retirada.toDate().toLocaleDateString('pt-BR') : (emp.data_retirada || "-");
-            let dataDevolucaoFormatada = emp.data_devolucao_prevista && typeof emp.data_devolucao_prevista.toDate === "function" ? emp.data_devolucao_prevista.toDate().toLocaleDateString('pt-BR') : (emp.data_devolucao_prevista || "-");
-            const leitorExibicao = (emp.Usuario_idUsuario && emp.Usuario_idUsuario.length > 15) ? "Fernando Ribeiro" : (emp.Usuario_idUsuario || "Desconhecido");
-            const livroExibicao = (emp.Exemplar_idExemplar && emp.Exemplar_idExemplar.length > 15) ? "Dom Casmurro" : (emp.Exemplar_idExemplar || "Livro Não Informado");
+            let dataRetiradaFormatada = emp.data_retirada && typeof emp.data_retirada.toDate === "function" 
+                ? emp.data_retirada.toDate().toLocaleDateString('pt-BR') 
+                : (emp.data_retirada || "-");
+
+            let dataDevPrevista = tratarData(emp.data_devolucao_prevista);
+            let dataDevCompara = new Date(dataDevPrevista);
+            dataDevCompara.setHours(0, 0, 0, 0);
+
+            let dataDevolucaoFormatada = dataDevPrevista.toLocaleDateString('pt-BR');
+
+            const leitorExibicao = emp.Usuario_idUsuario || "Desconhecido";
+            const livroExibicao = emp.Exemplar_idExemplar || "Livro Não Informado";
 
             let acaoHTML = "";
             let multaHTML = `<span class="status-tag success">Nenhuma</span>`;
 
+            // SE O LIVRO JÁ FOI DEVOLVIDO
             if (emp.status === "Devolvido") {
-                let dataReal = emp.data_devolucao_real && typeof emp.data_devolucao_real.toDate === "function" ? emp.data_devolucao_real.toDate().toLocaleDateString('pt-BR') : "Concluído";
+                let dataReal = emp.data_devolucao_real && typeof emp.data_devolucao_real.toDate === "function" 
+                    ? emp.data_devolucao_real.toDate().toLocaleDateString('pt-BR') 
+                    : "Concluído";
+
                 acaoHTML = `<span class="status-tag success">Recebido em ${dataReal}</span>`;
                 
                 let dPrev = tratarData(emp.data_devolucao_prevista);
                 let dReal = tratarData(emp.data_devolucao_real);
                 if (dReal > dPrev) {
-                     multaHTML = `<span class="status-tag success">Paga</span>`;
+                    multaHTML = `<span class="status-tag success">Paga</span>`;
                 }
-            } else {
+            } 
+            // SE O EMPRÉSTIMO AINDA ESTÁ ATIVO
+            else {
                 acaoHTML = `<button class="btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="confirmarDevolucaoBanco('${docSnap.id}')">Confirmar Devolução</button>`;
                 
-                if (emp.status === "Atrasado") {
-                    let dataDevPrevista = tratarData(emp.data_devolucao_prevista);
-                    const hoje = new Date();
-                    hoje.setHours(0,0,0,0);
-                    dataDevPrevista.setHours(0,0,0,0);
-
-                    const diferencaTempo = hoje.getTime() - dataDevPrevista.getTime();
+                // VERIFICAÇÃO DE ATRASO EM TEMPO REAL
+                if (hoje > dataDevCompara || emp.status === "Atrasado") {
+                    const diferencaTempo = hoje.getTime() - dataDevCompara.getTime();
                     const diasAtraso = Math.max(1, Math.ceil(diferencaTempo / (1000 * 60 * 60 * 24)));
                     const valorCalculado = (diasAtraso * valorMultaDiaria).toFixed(2).replace('.', ',');
 
-                    multaHTML = `<span class="status-tag danger">R$ ${valorCalculado}</span>`;
+                    multaHTML = `<span class="status-tag danger" title="${diasAtraso} dia(s) de atraso">R$ ${valorCalculado}</span>`;
                 }
             }
 
@@ -624,8 +814,12 @@ async function listarEmprestimosParaDevolucao() {
             `;
             tbody.insertAdjacentHTML("beforeend", linha);
         });
+
         if (typeof lucide !== "undefined") lucide.createIcons();
-    } catch (error) { console.error(error); }
+
+    } catch (error) { 
+        console.error("Erro ao carregar tabela de devoluções:", error); 
+    }
 }
 
 window.confirmarDevolucaoBanco = async function(id) {
@@ -707,30 +901,88 @@ async function listarReservasBanco() {
 
         querySnapshot.forEach((docSnap) => {
             const res = docSnap.data();
-            if (res.status === "Cancelada" || res.status === "Atendida") return;
+            // Exibe apenas reservas ativas/pendentes
+            if (res.status === "Cancelada" || res.status === "Atendida" || res.status === "Concluída") return;
 
-            const statusTag = res.status === "Disponível para retirada" ? "success" : "danger";
-            let dataReservaFormatada = res.data_reserva && typeof res.data_reserva.toDate === "function" ? res.data_reserva.toDate().toLocaleDateString('pt-BR') : (res.data_reserva || "-");
-            const leitorExibicao = (res.Usuario_idUsuario && res.Usuario_idUsuario.length > 15) ? "Fernando Ribeiro" : (res.Usuario_idUsuario || "Desconhecido");
-            const livroExibicao = (res.Livro_idLivro && res.Livro_idLivro.length > 15) ? "Dom Casmurro" : (res.Livro_idLivro || "Livro Não Informado");
+            const isDisponivel = res.status === "Disponível para retirada";
+            const statusTag = isDisponivel ? "success" : "warning";
+            const statusTexto = isDisponivel ? "Disponível para retirada" : (res.status || "Aguardando liberação");
+
+            let dataReservaFormatada = res.data_reserva && typeof res.data_reserva.toDate === "function" 
+                ? res.data_reserva.toDate().toLocaleDateString('pt-BR') 
+                : (res.data_reserva || "-");
+
+            const leitorExibicao = res.Usuario_idUsuario || "Desconhecido";
+            const livroExibicao = res.Livro_idLivro || "Livro Não Informado";
+
+            // Se ainda está aguardando, o botão NOTIFICA o leitor. Se já foi notificado, o botão apenas indica o estado.
+            let acaoNotificarHTML = "";
+            if (!isDisponivel) {
+                acaoNotificarHTML = `
+                    <button class="action-icon icon-success" onclick="notificarLivroDisponivel('${docSnap.id}', '${leitorExibicao}', '${livroExibicao}')" title="Notificar leitor que o livro está disponível">
+                        <i data-lucide="bell" class="icon-small"></i>
+                    </button>
+                `;
+            } else {
+                acaoNotificarHTML = `
+                    <span style="font-size: 12px; color: var(--success); font-weight: 500; margin-right: 8px;">
+                        <i data-lucide="check-circle" class="icon-small" style="display:inline-block; vertical-align:middle;"></i> Leitor Notificado
+                    </span>
+                `;
+            }
 
             const linha = `
                 <tr>
                     <td><strong>${leitorExibicao}</strong></td>
                     <td>${livroExibicao}</td>
                     <td>${dataReservaFormatada}</td>
-                    <td><span class="status-tag ${statusTag}">${res.status || "Pendente"}</span></td>
+                    <td><span class="status-tag ${statusTag}">${statusTexto}</span></td>
                     <td>
-                        <button class="action-icon icon-success" onclick="efetivarReservaParaEmprestimo('${docSnap.id}', '${leitorExibicao}', '${livroExibicao}')" title="Efetivar Empréstimo"><i data-lucide="check" class="icon-small"></i></button>
-                        <button class="action-icon btn-action-danger" onclick="cancelarReservaBanco('${docSnap.id}')" title="Cancelar Reserva"><i data-lucide="trash-2" class="icon-small"></i></button>
+                        ${acaoNotificarHTML}
+                        <button class="action-icon btn-action-danger" onclick="cancelarReservaBanco('${docSnap.id}')" title="Cancelar Reserva">
+                            <i data-lucide="trash-2" class="icon-small"></i>
+                        </button>
                     </td>
                 </tr>
             `;
             tbody.insertAdjacentHTML("beforeend", linha);
         });
+
         if (typeof lucide !== "undefined") lucide.createIcons();
-    } catch (error) { console.error(error); }
+
+    } catch (error) { 
+        console.error("Erro ao listar reservas:", error); 
+    }
 }
+
+// MUDANÇA DE STATUS PARA DISPONÍVEL + DISPARO DE ALERTA PARA O LEITOR
+window.notificarLivroDisponivel = async function(idReserva, leitor, livro) {
+    const confirmou = await confirmarAcao(
+        "Disponibilizar para Retirada?",
+        `Isso alterará o status da reserva de "${livro}" e enviará um alerta no painel do leitor (${leitor}).`,
+        "Sim, avisar leitor!"
+    );
+
+    if (!confirmou) return;
+
+    try {
+        // 1. Atualiza o status no Firebase para que o leitor veja o aviso no painel dele
+        await updateDoc(doc(db, "reservas", idReserva), {
+            status: "Disponível para retirada",
+            dataDisponibilizado: new Date()
+        });
+
+        mostrarNotificacao(`Notificação enviada! O livro "${livro}" agora está marcado para retirada.`, "success");
+        
+        // Recarrega a tabela e o dashboard
+        listarReservasBanco();
+        carregarMétricasDashboard();
+
+    } catch (error) {
+        console.error("Erro ao notificar leitor:", error);
+        mostrarNotificacao("Erro ao atualizar o status da reserva.", "error");
+    }
+};
 
 window.cancelarReservaBanco = async function(id) {
     const confirmou = await confirmarAcao(
@@ -747,33 +999,6 @@ window.cancelarReservaBanco = async function(id) {
         listarReservasBanco();
     } catch (error) { 
         console.error("Erro ao cancelar reserva:", error); 
-    }
-};
-
-window.efetivarReservaParaEmprestimo = async function(idReserva, leitor, livro) {
-    const confirmou = await confirmarAcao(
-        "Efetivar Empréstimo?",
-        `Confirma a liberação física do livro "${livro}" para o leitor "${leitor}"?`,
-        "Sim, liberar exemplar"
-    );
-
-    if (!confirmou) return;
-
-    try {
-        await addDoc(collection(db, "emprestimos"), {
-            Usuario_idUsuario: leitor,
-            Exemplar_idExemplar: livro,
-            data_retirada: new Date().toLocaleDateString('pt-BR'),
-            data_devolucao_prevista: new Date(Date.now() + 14*24*60*60*1000).toLocaleDateString('pt-BR'),
-            status: "Em andamento"
-        });
-        await updateDoc(doc(db, "reservas", idReserva), { status: "Atendida" });
-        mostrarNotificacao("Reserva efetivada e empréstimo gerado!", "success");
-        listarReservasBanco();
-        listarEmprestimosBanco();
-        carregarMétricasDashboard();
-    } catch (error) { 
-        console.error("Erro ao efetivar empréstimo:", error); 
     }
 };
 
@@ -1159,6 +1384,7 @@ document.addEventListener("click", (e) => {
         carregarNotificacoesBanco();
     }
 });
+
 
 // ==========================================================================
 // INICIALIZAÇÃO AUTOMÁTICA GERAL EM BLOCOS ISOLADOS (ANTI-TRAVAMENTO)
