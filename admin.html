@@ -27,55 +27,55 @@
                 
                 <ul class="sidebar-menu">
                     <li class="sidebar-item active" data-tela="dashboard">
-                        <a href="javascript:void(0)" onclick="navegar('dashboard')">
+                        <button type="button" onclick="navegar('dashboard')">
                             <i data-lucide="layout-dashboard"></i> <text>Dashboard</text>
-                        </a>
+                        </button>
                     </li>
                     <li class="sidebar-item" data-tela="acervo">
-                        <a href="javascript:void(0)" onclick="navegar('acervo')">
+                        <button type="button" onclick="navegar('acervo')">
                             <i data-lucide="book-open"></i> <text>Acervo</text>
-                        </a>
+                        </button>
                     </li>
                     <li class="sidebar-item" data-tela="emprestimos">
-                        <a href="javascript:void(0)" onclick="navegar('emprestimos')">
+                        <button type="button" onclick="navegar('emprestimos')">
                             <i data-lucide="refresh-cw"></i> <text>Empréstimos</text>
-                        </a>
+                        </button>
                     </li>
                     <li class="sidebar-item" data-tela="devolucoes">
-                        <a href="javascript:void(0)" onclick="navegar('devolucoes')">
+                        <button type="button" onclick="navegar('devolucoes')">
                             <i data-lucide="undo-2"></i> <text>Devoluções</text>
-                        </a>
+                        </button>
                     </li>
                     <li class="sidebar-item" data-tela="reservas">
-                        <a href="javascript:void(0)" onclick="navegar('reservas')">
+                        <button type="button" onclick="navegar('reservas')">
                             <i data-lucide="bookmark"></i> <text>Reservas</text>
-                        </a>
+                        </button>
                     </li>
                     <li class="sidebar-item" data-tela="usuarios">
-                        <a href="javascript:void(0)" onclick="navegar('usuarios')">
+                        <button type="button" onclick="navegar('usuarios')">
                             <i data-lucide="users"></i> <text>Usuários</text>
-                        </a>
+                        </button>
                     </li>
                     <li class="sidebar-item" data-tela="relatorios">
-                        <a href="javascript:void(0)" onclick="navegar('relatorios')">
+                        <button type="button" onclick="navegar('relatorios')">
                             <i data-lucide="trending-up"></i> <text>Relatórios</text>
-                        </a>
+                        </button>
                     </li>
                     <li class="sidebar-item" data-tela="configuracoes">
-                        <a href="javascript:void(0)" onclick="navegar('configuracoes')">
+                        <button type="button" onclick="navegar('configuracoes')">
                             <i data-lucide="settings"></i> <text>Configurações</text>
-                        </a>
+                        </button>
                     </li>
                 </ul>
             </div>
 
             <div class="sidebar-footer">
-                <a href="javascript:void(0)" id="btn-recolher" class="btn-collapse" onclick="toggleSidebar()">
+                <button type="button" id="btn-recolher" class="btn-collapse" onclick="toggleSidebar()">
                     <i data-lucide="menu"></i> <text>Recolher menu</text>
-                </a>
-                <a href="login.html" class="btn-logout">
+                </button>
+                <button type="button" class="btn-logout" onclick="efetuarLogout()">
                     <i data-lucide="log-out"></i> <text>Sair</text>
-                </a>
+                </button>
             </div>
         </aside>
 
@@ -124,14 +124,14 @@
                             </div>
 
                             <div class="dropdown-perfil-menu">
-                                <a href="javascript:void(0)" onclick="abrirModalPerfil('informacoes')">Editar perfil</a>
-                                <a href="javascript:void(0)" onclick="abrirModalPerfil('senha')">Alterar senha</a>
+                                <button type="button" onclick="abrirModalPerfil('informacoes')">Editar perfil</button>
+                                <button type="button" onclick="abrirModalPerfil('senha')">Alterar senha</button>
                             </div>
 
                             <div class="dropdown-perfil-footer">
-                                <a href="login.html" class="dropdown-logout">
+                                <button type="button" class="dropdown-logout" onclick="efetuarLogout()">
                                     <i data-lucide="log-out" class="icon-small"></i> Sair
-                                </a>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -225,10 +225,10 @@
 
             <!-- ================= TELA: NOVO LIVRO ================= -->
             <div id="tela-novo-livro" class="aba-conteudo" style="display: none;">
-                <a href="javascript:void(0)" class="btn-back" onclick="navegar('acervo')">
+                <button type="button" class="btn-back" onclick="navegar('acervo')">
                     <i data-lucide="arrow-left"></i>
                     <span>Voltar ao acervo</span>
-                </a>
+                </button>
                                 <!-- INÍCIO DO BLOCO DE PESQUISA (OPEN LIBRARY) -->
                 <div class="section-card" style="margin-bottom: 20px;">
                     <h3 style="margin-bottom: 15px;">Auto-preencher via Catálogo Global</h3>

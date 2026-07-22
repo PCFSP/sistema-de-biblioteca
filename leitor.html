@@ -22,25 +22,25 @@
                 
                 <ul class="sidebar-menu">
                     <li class="sidebar-item active" id="btn-nav-painel">
-                        <a href="javascript:void(0)" onclick="navegarLeitor('painel')">
+                        <button type="button" onclick="navegarLeitor('painel')">
                             <i data-lucide="layout-dashboard"></i> <text>Meu Painel</text>
-                        </a>
+                        </button>
                     </li>
                     <li class="sidebar-item" id="btn-nav-buscar">
-                        <a href="javascript:void(0)" onclick="navegarLeitor('buscar')">
+                        <button type="button" onclick="navegarLeitor('buscar')">
                             <i data-lucide="search"></i> <text>Buscar Livros</text>
-                        </a>
+                        </button>
                     </li>
                 </ul>
             </div>
 
             <div class="sidebar-footer">
-                <a href="javascript:void(0)" id="btn-recolher" class="btn-collapse" onclick="toggleSidebar()">
+                <button type="button" id="btn-recolher" class="btn-collapse" onclick="toggleSidebar()">
                     <i data-lucide="menu"></i> <text>Recolher menu</text>
-                </a>
-                <a href="login.html" class="btn-logout">
+                </button>
+                <button type="button" class="btn-logout" onclick="efetuarLogout()">
                     <i data-lucide="log-out"></i> <text>Sair</text>
-                </a>
+                </button>
             </div>
         </aside>
 
@@ -85,14 +85,14 @@
                             </div>
 
                             <div class="dropdown-perfil-menu">
-                                <a href="javascript:void(0)" onclick="abrirModalPerfil('informacoes')">Editar perfil</a>
-                                <a href="javascript:void(0)" onclick="abrirModalPerfil('senha')">Alterar senha</a>
+                                <button type="button" onclick="abrirModalPerfil('informacoes')">Editar perfil</button>
+                                <button type="button" onclick="abrirModalPerfil('senha')">Alterar senha</button>
                             </div>
 
                             <div class="dropdown-perfil-footer">
-                                <a href="login.html" class="dropdown-logout">
+                                <button type="button" class="dropdown-logout" onclick="efetuarLogout()">
                                     <i data-lucide="log-out" class="icon-small"></i> Sair
-                                </a>
+                                </button>
                             </div>
                         </div>
                     </div>
