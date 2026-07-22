@@ -231,7 +231,8 @@
                     <i data-lucide="arrow-left"></i>
                     <span>Voltar ao acervo</span>
                 </button>
-                                <!-- INÍCIO DO BLOCO DE PESQUISA (OPEN LIBRARY) -->
+
+                <!-- INÍCIO DO BLOCO DE PESQUISA (OPEN LIBRARY) -->
                 <div class="section-card" style="margin-bottom: 20px;">
                     <h3 style="margin-bottom: 15px;">Auto-preencher via Catálogo Global</h3>
 
@@ -239,32 +240,73 @@
                         <div class="input-group" style="flex: 1; margin-bottom: 0;">
                             <input type="text" id="input-busca-catalogo" placeholder="Digite o ISBN ou Título...">
                         </div>
-                        <button type="button" id="btn-autofill" class="btn-primary"
-                            style="margin-bottom: 0; padding: 0 20px;">Buscar</button>
+                        <button type="button" id="btn-autofill" class="btn-primary" style="margin-bottom: 0; padding: 0 20px;">Buscar</button>
                     </div>
 
                     <small id="autofill-status" style="display: block; margin-top: 10px; font-weight: bold;"></small>
-                    <div id="autofill-results"
-                        style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;"></div>
+                    <div id="autofill-results" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;"></div>
                 </div>
                 <!-- FIM DO BLOCO DE PESQUISA -->
+
                 <div class="form-container">
                     <div class="section-card">
-                        <h3>Informações do Livro</h3>
-                        <div class="input-group"><label>Título</label><input type="text" id="input-livro-titulo" placeholder="Ex: Dom Casmurro"></div>
-                        <div class="form-row">
-                            <div class="input-group"><label>Autor</label><input type="text" id="input-livro-autor" placeholder="Ex: Machado de Assis"></div>
-                            <div class="input-group"><label>Editora</label><input type="text" id="input-livro-editora" placeholder="Ex: Companhia das Letras"></div>
+                        <h3 style="margin-bottom: 20px;">Informações do Livro</h3>
+                        
+                        <div class="input-group">
+                            <label>Título</label>
+                            <input type="text" id="input-livro-titulo" placeholder="Ex: Dom Casmurro">
                         </div>
+
                         <div class="form-row">
-                            <div class="input-group"><label>Ano de Publicação</label><input type="text" id="input-livro-ano" placeholder="Ex: 2024"></div>
-                            <div class="input-group"><label>ISBN</label><input type="text" id="input-livro-isbn" placeholder="978-XX-XXX-XXXX-X"></div>
+                            <div class="input-group">
+                                <label>Autor</label>
+                                <input type="text" id="input-livro-autor" placeholder="Ex: Machado de Assis">
+                            </div>
+                            <div class="input-group">
+                                <label>Editora</label>
+                                <input type="text" id="input-livro-editora" placeholder="Ex: Companhia das Letras">
+                            </div>
                         </div>
-                        <div class="input-group"><label>URL da Imagem da Capa</label><input type="text" id="input-livro-capa" placeholder="https://link-da-imagem.com/capa.jpg"></div>
-                    </div>
-                    <div class="form-actions-right">
-                        <button type="button" class="btn-secondary" onclick="navegar('acervo')">Cancelar</button>
-                        <button type="button" class="btn-primary" id="btn-salvar-livro">Salvar Livro</button>
+
+                        <div class="form-row">
+                            <div class="input-group">
+                                <label>Ano de Publicação</label>
+                                <input type="text" id="input-livro-ano" placeholder="Ex: 2024">
+                            </div>
+                            <div class="input-group">
+                                <label>ISBN</label>
+                                <input type="text" id="input-livro-isbn" placeholder="978-XX-XXX-XXXX-X">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="input-group">
+                                <label>Gênero / Categoria</label>
+                                <select class="select-input" id="input-livro-genero">
+                                    <option value="Geral">Geral</option>
+                                    <option value="Ficção">Ficção</option>
+                                    <option value="Romance">Romance</option>
+                                    <option value="História">História</option>
+                                    <option value="Tecnologia">Tecnologia</option>
+                                    <option value="Ciência">Ciência</option>
+                                    <option value="Literatura">Literatura</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Quantidade de Exemplares</label>
+                                <input type="number" id="input-livro-quantidade" min="1" value="1" placeholder="Ex: 5">
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>URL da Imagem da Capa</label>
+                            <input type="text" id="input-livro-capa" placeholder="https://link-da-imagem.com/capa.jpg">
+                        </div>
+
+                        <div class="form-actions-right" style="margin-top: 24px;">
+                            <button type="button" class="btn-secondary" onclick="navegar('acervo')">Cancelar</button>
+                            <button type="button" class="btn-primary" id="btn-salvar-livro">Salvar Livro</button>
+                        </div>
                     </div>
                 </div>
             </div>
