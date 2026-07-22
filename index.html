@@ -20,7 +20,7 @@
             <button class="btn-theme-toggle" onclick="toggleTheme()" title="Alternar Tema">
                 <i data-lucide="sun" id="theme-icon"></i>
             </button>
-            <a href="login.html" class="btn-secondary btn-nav-landing">Acessar Portal</a>
+            <button type="button" class="btn-secondary btn-nav-landing" onclick="window.location.href='login.html'">Acessar Portal</button>
         </nav>
     </header>
 
@@ -31,9 +31,9 @@
             <p>Explore nosso acervo completo de livros, faça reservas online e acompanhe seus empréstimos diretamente pelo nosso portal digital.</p>
             <div class="hero-actions">
                 <!-- Rola a tela até a seção de pesquisa -->
-                <a href="#secao-consulta-acervo" class="btn-primary btn-hero" onclick="document.getElementById('secao-consulta-acervo').scrollIntoView({behavior: 'smooth'}); return false;">
+                <button type="button" class="btn-primary btn-hero" onclick="document.getElementById('secao-consulta-acervo').scrollIntoView({behavior: 'smooth'});">
                     <i data-lucide="search"></i> Consultar Acervo
-                </a>
+                </button>
             </div>
         </div>
 
@@ -53,7 +53,7 @@
                 <span>Renovação rápida</span>
                 <i data-lucide="check-circle-2" class="icon-success"></i>
             </div>
-            <a href="login.html" class="btn-secondary btn-block btn-card-landing">Entrar no meu perfil</a>
+            <button type="button" class="btn-secondary btn-block btn-card-landing" onclick="window.location.href='login.html'">Entrar no meu perfil</button>
         </div>
     </section>
 
