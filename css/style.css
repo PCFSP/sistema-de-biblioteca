@@ -99,7 +99,8 @@ body {
     margin-bottom: 4px;
 }
 
-.sidebar-item a {
+.sidebar-item a,
+.sidebar-item button {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -109,14 +110,23 @@ body {
     font-weight: 500;
     border-radius: var(--radius);
     transition: all 0.2s;
+    width: 100%;
+    background: none;
+    border: none;
+    font-size: 14px;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
 }
 
-.sidebar-item a:hover {
+.sidebar-item a:hover,
+.sidebar-item button:hover {
     background-color: var(--muted);
     color: var(--foreground);
 }
 
-.sidebar-item.active a {
+.sidebar-item.active a,
+.sidebar-item.active button {
     background-color: var(--primary-green);
     color: #ffffff;
 }
@@ -139,6 +149,15 @@ body {
     text-decoration: none;
     border-radius: var(--radius);
     cursor: pointer;
+}
+
+.btn-collapse,
+.btn-logout {
+    width: 100%;
+    background: none;
+    border: none;
+    font-family: inherit;
+    text-align: left;
 }
 
 .btn-collapse:hover, .btn-logout:hover {
@@ -217,6 +236,10 @@ body {
     border-radius: var(--radius);
     transition: all 0.2s ease;
     width: fit-content;
+    background: none;
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
 }
 
 .btn-back:hover {
@@ -508,12 +531,16 @@ body {
 
 .sidebar.collapsed .nav-brand text,
 .sidebar.collapsed .sidebar-menu .sidebar-item a text,
-.sidebar.collapsed .sidebar-footer a text {
+.sidebar.collapsed .sidebar-menu .sidebar-item button text,
+.sidebar.collapsed .sidebar-footer a text,
+.sidebar.collapsed .sidebar-footer button text {
     display: none !important;
 }
 
 .sidebar.collapsed .sidebar-menu .sidebar-item a,
-.sidebar.collapsed .sidebar-footer a {
+.sidebar.collapsed .sidebar-menu .sidebar-item button,
+.sidebar.collapsed .sidebar-footer a,
+.sidebar.collapsed .sidebar-footer button {
     justify-content: center;
     padding: 12px 0;
 }
@@ -685,6 +712,11 @@ body {
     color: var(--primary-green);
     text-decoration: none;
     font-weight: 500;
+    background: none;
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 0;
 }
 
 .login-link:hover {
@@ -1057,6 +1089,11 @@ body {
     color: var(--muted-foreground);
     text-decoration: none;
     font-size: 14px;
+    background: none;
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 0;
 }
 
 .link-back:hover {
@@ -1194,19 +1231,29 @@ button.avatar-circle {
     border-bottom: 1px solid var(--border);
 }
 
-.dropdown-perfil-menu a {
+.dropdown-perfil-menu a,
+.dropdown-perfil-menu button {
+    display: block;
+    width: 100%;
     padding: 8px 6px;
     font-size: 14px;
     color: var(--foreground);
     text-decoration: none;
     border-radius: 6px;
+    background: none;
+    border: none;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
 }
 
-.dropdown-perfil-menu a:hover {
+.dropdown-perfil-menu a:hover,
+.dropdown-perfil-menu button:hover {
     background-color: var(--muted);
 }
 
-.dropdown-perfil-footer a.dropdown-logout {
+.dropdown-perfil-footer a.dropdown-logout,
+.dropdown-perfil-footer button.dropdown-logout {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1215,9 +1262,16 @@ button.avatar-circle {
     color: var(--danger-text);
     text-decoration: none;
     border-radius: 6px;
+    width: 100%;
+    background: none;
+    border: none;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
 }
 
-.dropdown-perfil-footer a.dropdown-logout:hover {
+.dropdown-perfil-footer a.dropdown-logout:hover,
+.dropdown-perfil-footer button.dropdown-logout:hover {
     background-color: var(--danger-bg);
 }
 
