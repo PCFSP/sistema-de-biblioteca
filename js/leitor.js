@@ -4,7 +4,7 @@
 (function verificarAcessoLeitor() {
     const nomeLogado = localStorage.getItem("usuario-logado-nome");
     if (!nomeLogado) {
-        alert("Sessão expirada ou inválida. Acesse sua conta.");
+        mostrarNotificacao("Sessão expirada ou inválida. Acesse sua conta.", "warning");
         window.location.href = "login.html";
     }
 })();
@@ -225,7 +225,14 @@ async function carregarPainelLeitor() {
 
 // FUNÇÃO PARA EFETUAR A RENOVAÇÃO DIRETA PELO LEITOR
 window.renovarEmprestimoLeitor = async function(idEmprestimo) {
-    if (!confirm("Deseja estender o prazo deste empréstimo por mais 7 dias?")) return;
+    const confirmou = await confirmarAcao(
+        "Renovar Empréstimo?",
+        "Deseja estender o prazo de devolução deste exemplar por mais 7 dias?",
+        "Sim, renovar"
+    );
+
+    if (!confirmou) return;
+
     try {
         const queryConfig = await getDocs(collection(db, "configuracao"));
         let diasExtensao = 7;
@@ -240,7 +247,7 @@ window.renovarEmprestimoLeitor = async function(idEmprestimo) {
             data_devolucao_prevista: novaData.toLocaleDateString('pt-BR')
         });
 
-        alert("Livro renovado com sucesso!");
+        mostrarNotificacao("Livro renovado com sucesso!", "success");
         carregarPainelLeitor();
     } catch (error) {
         console.error("Erro ao renovar livro:", error);
@@ -312,7 +319,14 @@ async function listarCatalogoLivrosLeitor() {
 
 // CRIAÇÃO DE NOVA RESERVA SE O LIVRO ESTIVER INDISPONÍVEL
 window.solicitarReservaLeitor = async function(tituloLivro) {
-    if (!confirm(`Deseja realizar a reserva do livro "${tituloLivro}"?`)) return;
+    const confirmou = await confirmarAcao(
+        "Reservar Livro?",
+        `Deseja entrar na fila de espera para o livro "${tituloLivro}"?`,
+        "Sim, reservar"
+    );
+
+    if (!confirmou) return;
+
     try {
         await addDoc(collection(db, "reservas"), {
             Usuario_idUsuario: LEITOR_LOGADO,
@@ -320,15 +334,24 @@ window.solicitarReservaLeitor = async function(tituloLivro) {
             data_reserva: new Date().toLocaleDateString('pt-BR'),
             status: "Aguardando liberação"
         });
-        alert("Reserva registrada com sucesso! Fique de olho no seu painel.");
+        mostrarNotificacao("Reserva registrada! Acompanhe pelo seu painel.", "success");
         carregarPainelLeitor();
         listarCatalogoLivrosLeitor();
-    } catch (error) { console.error(error); }
+    } catch (error) { 
+        console.error("Erro ao solicitar reserva:", error); 
+    }
 };
 
 // SOLICITAÇÃO DIRETA DE EMPRÉSTIMO SE O LIVRO ESTIVER LIVRE
 window.solicitarEmprestimoDireto = async function(tituloLivro) {
-    if (!confirm(`Deseja solicitar o empréstimo imediato de "${tituloLivro}"?`)) return;
+    const confirmou = await confirmarAcao(
+        "Solicitar Empréstimo?",
+        `Deseja solicitar a retirada imediata do livro "${tituloLivro}"?`,
+        "Sim, solicitar"
+    );
+
+    if (!confirmou) return;
+
     try {
         const queryConfig = await getDocs(collection(db, "configuracao"));
         let diasPrazo = 14;
@@ -348,12 +371,13 @@ window.solicitarEmprestimoDireto = async function(tituloLivro) {
             status: "Em andamento"
         });
 
-        alert("Empréstimo concedido! Retire seu exemplar na bancada.");
+        mostrarNotificacao("Empréstimo solicitado! Retire seu exemplar na bancada.", "success");
         carregarPainelLeitor();
         listarCatalogoLivrosLeitor();
-    } catch (error) { console.error(error); }
+    } catch (error) { 
+        console.error("Erro ao solicitar empréstimo:", error); 
+    }
 };
-
 // ==========================================================================
 // ESCUTADOR DE EVENTOS PARA ATUALIZAÇÃO AO TROCAR DE ABAS
 // ==========================================================================

@@ -304,6 +304,49 @@ function efetuarLogout() {
     window.location.href = "login.html";
 }
 
+// ==========================================================================
+// UTILITÁRIO DE NOTIFICAÇÕES PROFISSIONAIS (TOAST)
+// ==========================================================================
+window.mostrarNotificacao = function(mensagem, tipo = "success") {
+    // Tipos válidos: 'success', 'error', 'warning', 'info'
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer);
+            toast.addEventListener('mouseleave', Swal.resumeTimer);
+        }
+    });
+
+    Toast.fire({
+        icon: tipo,
+        title: mensagem
+    });
+};
+// ==========================================================================
+// HELPER GLOBAL: MODAL DE CONFIRMAÇÃO PROFISSIONAL
+// ==========================================================================
+window.confirmarAcao = async function(titulo, texto, textoBotaoConfirmar = "Sim, confirmar!") {
+    const resultado = await Swal.fire({
+        title: titulo,
+        text: texto,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444', // Vermelho/Perigo
+        cancelButtonColor: '#6b7280',  // Cinza/Cancelar
+        confirmButtonText: textoBotaoConfirmar,
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true,
+        background: '#1e293b',       // Cor alinhada ao Dark Mode
+        color: '#f8fafc'
+    });
+
+    return resultado.isConfirmed; // Retorna true se o usuário clicou em confirmar
+};
+
 // Tornar funções acessíveis globalmente pelas tags onclick do HTML
 window.efetuarLogout = efetuarLogout;
 window.navegar = navegar;

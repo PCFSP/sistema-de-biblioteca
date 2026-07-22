@@ -42,12 +42,12 @@ if (formLogin) {
                     window.location.href = "leitor.html";
                 }
             } else {
-                alert("Credenciais incorretas ou usuário não localizado!");
+                mostrarNotificacao("Credenciais incorretas ou usuário não localizado!", "error")
             }
 
         } catch (error) {
             console.error("Erro ao autenticar usuário:", error);
-            alert("Falha na conexão com o banco de dados.");
+            mostrarNotificacao("Falha na conexão com o banco de dados.", "error")
         }
     });
 }
@@ -70,7 +70,7 @@ if (formCadastro) {
         const mensagem = document.getElementById("cad-mensagem").value.trim();
 
         if (nome.split(" ").length < 2) {
-            alert("Por favor, insira seu nome completo (Nome e Sobrenome).");
+            mostrarNotificacao("Por favor, insira seu nome completo (Nome e Sobrenome).", "error")
             return;
         }
 
@@ -87,7 +87,7 @@ if (formCadastro) {
                 dataSolicitacao: new Date()
             });
 
-            alert("Solicitação enviada com sucesso! O administrador analisará seu cadastro.");
+            mostrarNotificacao("Solicitação enviada com sucesso! O administrador analisará seu cadastro.", "sucess")
             formCadastro.reset();
             
             if (typeof window.mostrarTelaLogin === "function") {
@@ -96,7 +96,7 @@ if (formCadastro) {
 
         } catch (error) {
             console.error("Erro ao registrar solicitação:", error);
-            alert("Ocorreu um problema ao enviar a solicitação.");
+            mostrarNotificacao("Ocorreu um problema ao enviar a solicitação.", "error")
         }
     });
 }

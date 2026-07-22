@@ -7,7 +7,7 @@
 
     // Se não houver dados de login no navegador, barra imediatamente
     if (!nomeLogado || !emailLogado) {
-        alert("Acesso negado! Por favor, faça login.");
+        mostrarNotificacao("Acesso negado! Por favor, faça login.", "error");
         window.location.href = "login.html";
         return;
     }
@@ -29,7 +29,7 @@
         });
 
         if (!ehAdmin) {
-            alert("Área restrita para administradores! Redirecionando...");
+            mostrarNotificacao("Área restrita para administradores! Redirecionando...", "error");
             window.location.href = "login.html";
         }
     } catch (error) {
@@ -88,10 +88,31 @@ document.addEventListener("click", (e) => {
 
 // Tornar funções de deleção/edição globais para o HTML conseguir chamar nos botões onclick
 window.deletarDocumento = async function(colecao, id) {
-    if (!confirm(`Tem certeza que deseja excluir este registro de '${colecao}'?`)) return;
+    // Mapeamento para traduzir o nome da coleção técnica para o usuário
+    const nomesAmigaveis = {
+        'books': 'este livro',
+        'usuarios': 'este usuário',
+        'emprestimos': 'este registro de empréstimo',
+        'reservas': 'esta reserva'
+    };
+
+    const nomeItem = nomesAmigaveis[colecao] || 'este registro';
+
+    // Dispara o SweetAlert2 customizado
+    const confirmou = await confirmarAcao(
+        "Tem certeza?",
+        `Esta ação excluirá permanentemente ${nomeItem} do banco de dados.`,
+        "Sim, excluir!"
+    );
+
+    if (!confirmou) return;
+
     try {
         await deleteDoc(doc(db, colecao, id));
-        alert("Removido com sucesso!");
+        
+        mostrarNotificacao("Registro removido com sucesso!", "success");
+
+        // Atualiza a tabela correspondente
         if (colecao === "books") listarAcervoBanco();
         if (colecao === "emprestimos") {
             listarEmprestimosBanco();
@@ -99,9 +120,11 @@ window.deletarDocumento = async function(colecao, id) {
         }
         if (colecao === "usuarios") listarUsuariosBanco();
         if (colecao === "reservas") listarReservasBanco();
+        
         carregarMétricasDashboard();
     } catch (error) {
         console.error("Erro ao deletar:", error);
+        mostrarNotificacao("Erro ao tentar excluir o registro.", "error");
     }
 };
 
@@ -269,7 +292,7 @@ if (btnSalvarLivro) {
         const isbn = document.getElementById("input-livro-isbn").value;
         const capa = document.getElementById("input-livro-capa").value;
 
-        if (!titulo || !autor) return alert("Preencha Título e Autor!");
+        if (!titulo || !autor) return mostrarNotificacao("Preencha Título e Autor!", "warning");
 
         const dadosLivro = {
             titulo, autor, editora, isbn, capa,
@@ -280,12 +303,12 @@ if (btnSalvarLivro) {
         try {
             if (btnSalvarLivro.dataset.editId) {
                 await updateDoc(doc(db, "books", btnSalvarLivro.dataset.editId), dadosLivro);
-                alert("Livro atualizado com sucesso!");
+                mostrarNotificacao("Livro atualizado com sucesso!", "sucess");
                 delete btnSalvarLivro.dataset.editId;
                 btnSalvarLivro.innerText = "+ Salvar Livro";
             } else {
                 await addDoc(collection(db, "books"), dadosLivro);
-                alert("Livro cadastrado com sucesso!");
+                mostrarNotificacao("Livro cadastrado com sucesso.", "sucess");
             }
             navegar("acervo");
             listarAcervoBanco();
@@ -515,7 +538,7 @@ if (btnConfirmarEmprestimo) {
         const retirada = document.getElementById("input-emprestimo-retirada").value;
         const devolucao = document.getElementById("input-emprestimo-devolucao").value;
 
-        if (!leitor || !livro || !retirada || !devolucao) return alert("Preencha todos os campos do empréstimo!");
+        if (!leitor || !livro || !retirada || !devolucao) return mostrarNotificacao("Preencha todos os campos obrigatórios.", "warning");
 
         try {
             await addDoc(collection(db, "emprestimos"), {
@@ -525,7 +548,7 @@ if (btnConfirmarEmprestimo) {
                 data_devolucao_prevista: devolucao,
                 status: "Em andamento"
             });
-            alert("Empréstimo Registrado!");
+            mostrarNotificacao("Empréstimo Registrado.", "sucess");
             alternarFormEmprestimo(false);
             listarEmprestimosBanco();
             carregarMétricasDashboard();
@@ -606,17 +629,27 @@ async function listarEmprestimosParaDevolucao() {
 }
 
 window.confirmarDevolucaoBanco = async function(id) {
-    if (!confirm("Confirmar o recebimento físico deste livro e dar baixa no sistema?")) return;
+    const confirmou = await confirmarAcao(
+        "Confirmar Devolução?",
+        "Deseja registrar o recebimento físico deste exemplar e dar baixa no sistema?",
+        "Sim, dar baixa!"
+    );
+
+    if (!confirmou) return;
+
     try {
         await updateDoc(doc(db, "emprestimos", id), {
             status: "Devolvido",
             data_devolucao_real: new Date()
         });
-        alert("Baixa concluída!");
+        mostrarNotificacao("Baixa de devolução concluída com sucesso!", "success");
         listarEmprestimosParaDevolucao();
         listarEmprestimosBanco();
         carregarMétricasDashboard();
-    } catch (error) { console.error(error); }
+    } catch (error) { 
+        console.error("Erro na devolução:", error); 
+        mostrarNotificacao("Erro ao registrar devolução.", "error");
+    }
 };
 
 // ==========================================================================
@@ -645,7 +678,7 @@ async function carregarConfiguracoesBanco() {
 const btnSalvarConfig = document.getElementById("btn-salvar-configuracoes");
 if (btnSalvarConfig) {
     btnSalvarConfig.addEventListener("click", async () => {
-        if (!idConfigDoc) return alert("Nenhum documento de configuração localizado.");
+        if (!idConfigDoc) return mostrarNotificacao("Nenhum documento de configuração localizado.", "warning");
         try {
             await updateDoc(doc(db, "configuracao", idConfigDoc), {
                 nome_biblioteca: document.getElementById("config-nome-biblioteca").value,
@@ -654,7 +687,7 @@ if (btnSalvarConfig) {
                 limite_emprestimos_usuario: parseInt(document.getElementById("config-limite-user").value) || 0,
                 prazo_maximo_renovacao_dias: parseInt(document.getElementById("config-max-renovacao").value) || 0
             });
-            alert("Configurações atualizadas!");
+            mostrarNotificacao("Configurações atualizadas!", "sucess");
             carregarMétricasDashboard();
         } catch (error) { console.error(error); }
     });
@@ -700,16 +733,32 @@ async function listarReservasBanco() {
 }
 
 window.cancelarReservaBanco = async function(id) {
-    if (!confirm("Deseja realmente cancelar esta reserva?")) return;
+    const confirmou = await confirmarAcao(
+        "Cancelar Reserva?",
+        "Esta ação cancelará a solicitação de reserva do leitor.",
+        "Sim, cancelar reserva"
+    );
+
+    if (!confirmou) return;
+
     try {
         await updateDoc(doc(db, "reservas", id), { status: "Cancelada" });
-        alert("Reserva cancelada!");
+        mostrarNotificacao("Reserva cancelada com sucesso!", "success");
         listarReservasBanco();
-    } catch (error) { console.error(error); }
+    } catch (error) { 
+        console.error("Erro ao cancelar reserva:", error); 
+    }
 };
 
 window.efetivarReservaParaEmprestimo = async function(idReserva, leitor, livro) {
-    if (!confirm(`Confirmar a liberação do livro '${livro}' para '${leitor}'?`)) return;
+    const confirmou = await confirmarAcao(
+        "Efetivar Empréstimo?",
+        `Confirma a liberação física do livro "${livro}" para o leitor "${leitor}"?`,
+        "Sim, liberar exemplar"
+    );
+
+    if (!confirmou) return;
+
     try {
         await addDoc(collection(db, "emprestimos"), {
             Usuario_idUsuario: leitor,
@@ -719,11 +768,13 @@ window.efetivarReservaParaEmprestimo = async function(idReserva, leitor, livro) 
             status: "Em andamento"
         });
         await updateDoc(doc(db, "reservas", idReserva), { status: "Atendida" });
-        alert("Empréstimo efetivado!");
+        mostrarNotificacao("Reserva efetivada e empréstimo gerado!", "success");
         listarReservasBanco();
         listarEmprestimosBanco();
         carregarMétricasDashboard();
-    } catch (error) { console.error(error); }
+    } catch (error) { 
+        console.error("Erro ao efetivar empréstimo:", error); 
+    }
 };
 
 // ==========================================================================
@@ -848,6 +899,49 @@ async function listarSolicitacoesPendentesAdmin() {
     }
 }
 
+window.decidirSolicitacao = async function(idSolicitacao, aprovado) {
+    const titulo = aprovado ? "Aprovar Cadastro?" : "Recusar Cadastro?";
+    const mensagem = aprovado 
+        ? "O usuário receberá permissão de acesso ao sistema de biblioteca." 
+        : "A solicitação será recusada e arquivada.";
+    const botaoTexto = aprovado ? "Sim, aprovar!" : "Sim, recusar";
+
+    const confirmou = await confirmarAcao(titulo, mensagem, botaoTexto);
+    if (!confirmou) return;
+
+    try {
+        const docRef = doc(db, "solicitacoes_cadastro", idSolicitacao);
+        const docSnap = await getDoc(docRef);
+        
+        if (!docSnap.exists()) return mostrarNotificacao("Solicitação não encontrada.", "warning");
+        const dados = docSnap.data();
+
+        if (aprovado) {
+            await addDoc(collection(db, "usuarios"), {
+                nome: dados.nome,
+                email: dados.email,
+                cpf: dados.cpf,
+                telefone: dados.telefone,
+                foto: dados.fotoPerfilUrl || "",
+                status: "Ativo",
+                tipoUser: "leitor",
+                dataCadastro: new Date()
+            });
+            await updateDoc(docRef, { status: "Aprovado" });
+            mostrarNotificacao(`Cadastro de ${dados.nome} aprovado!`, "success");
+        } else {
+            await updateDoc(docRef, { status: "Recusado" });
+            mostrarNotificacao("Solicitação recusada.", "info");
+        }
+
+        await listarUsuariosBanco();
+        await carregarMétricasDashboard();
+
+    } catch (error) {
+        console.error("Erro ao processar decisão de cadastro:", error);
+    }
+};
+
 // ==========================================================================
 // CADASTRO DE USUÁRIO COM VALIDAÇÃO ANTI-DUPLICAÇÃO
 // ==========================================================================
@@ -865,7 +959,7 @@ if (btnConfirmarCadastroUser) {
         const foto = document.getElementById("input-user-foto")?.value.trim();
 
         if (!nome || !email || !cpf) {
-            alert("Preencha ao menos Nome, CPF e E-mail.");
+            mostrarNotificacao("Preencha todos os campos obrigatórios.", "warning");
             return;
         }
 
@@ -890,7 +984,7 @@ if (btnConfirmarCadastroUser) {
             });
 
             if (duplicado) {
-                alert(`Cadastro negado! ${motivoDuplicado}`);
+                mostrarNotificacao(motivoDuplicado, "warning");
                 return;
             }
 
@@ -906,7 +1000,7 @@ if (btnConfirmarCadastroUser) {
                 dataCadastro: new Date()
             });
 
-            alert(`Usuário ${nome} (${perfil}) cadastrado com sucesso!`);
+            mostrarNotificacao(`Usuário ${nome} (${perfil}) cadastrado com sucesso!`, "success");
 
             // Limpa o formulário
             document.getElementById("input-user-nome").value = "";
@@ -924,7 +1018,7 @@ if (btnConfirmarCadastroUser) {
 
         } catch (error) {
             console.error("Erro ao cadastrar usuário:", error);
-            alert("Erro ao salvar dados no banco de dados.");
+            mostrarNotificacao("Erro ao salvar dados no banco de dados.", "error");
         }
     });
 }
