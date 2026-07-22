@@ -1550,3 +1550,49 @@ button.avatar-circle {
 .autofill-select-btn:hover {
     opacity: 0.8;
 }
+/* ==========================================================================
+   ESTILOS DE AÇÕES E ALERTAS DO PAINEL DO LEITOR
+   ========================================================================== */
+
+/* Botão de renovação bloqueado (limite atingido) */
+.btn-renovar-limite {
+    font-size: 12px;
+    color: var(--muted-foreground, #a1a1aa);
+    cursor: not-allowed;
+}
+
+/* Aviso de renovação bloqueada por atraso */
+.text-renovacao-bloqueada {
+    font-size: 13px;
+    color: var(--danger-text, #ef4444);
+    font-weight: 500;
+}
+
+/* Ícone de marca-página no botão de reserva */
+.icon-btn-reserva {
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 4px;
+}
+
+/* Botões de ação em tabelas */
+.btn-table-action {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+/* Capa padrão quando o livro não tem imagem */
+.table-cover-placeholder {
+    background-color: #555;
+    width: 32px;
+    height: 48px;
+    border-radius: 4px;
+}
+
+/* Capa com imagem */
+.table-cover-img {
+    width: 32px;
+    height: 48px;
+    border-radius: 4px;
+    object-fit: cover;
+}
