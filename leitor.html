@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Biblioteca - Área do Leitor</title>
     <link rel="stylesheet" href="css/style.css">
-    <!-- Script do Lucide para carregar os ícones profissionais -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -33,6 +32,16 @@
                             <i data-lucide="search"></i> <text>Buscar Livros</text>
                         </button>
                     </li>
+                    <li class="sidebar-item" id="btn-nav-emprestimos">
+                        <button type="button" onclick="navegarLeitor('emprestimos')">
+                            <i data-lucide="refresh-cw"></i> <text>Meus Empréstimos</text>
+                        </button>
+                    </li>
+                    <li class="sidebar-item" id="btn-nav-reservas">
+                        <button type="button" onclick="navegarLeitor('reservas')">
+                            <i data-lucide="bookmark"></i> <text>Minhas Reservas</text>
+                        </button>
+                    </li>
                 </ul>
             </div>
 
@@ -49,12 +58,10 @@
         <!-- ================= MAIN ================= -->
         <main class="main-dashboard">
             
-            <!-- Cabeçalho Dinâmico Superior Corrigido -->
             <header class="dashboard-header">
                 <h2 id="titulo-pagina">Meu Painel</h2>
                 
                 <div class="header-profile">
-                    <!-- Novo botão do Modo Noturno -->
                     <button class="btn-theme-toggle" onclick="toggleTheme()" title="Alternar Tema">
                         <i data-lucide="sun" id="theme-icon"></i>
                     </button>
@@ -72,7 +79,7 @@
                             </div>
 
                             <div class="notificacoes-lista" id="lista-notificacoes">
-                                <p style="text-align: center; color: var(--muted-foreground); font-size: 13px; padding: 16px 0;">Carregando notificações...</p>
+                                <p class="empty-state-text">Carregando notificações...</p>
                             </div>
                         </div>
                     </div>
@@ -82,8 +89,8 @@
 
                         <div id="dropdown-perfil" class="dropdown-perfil" style="display: none;">
                             <div class="dropdown-perfil-header">
-                                <strong>Isabela Bastos</strong>
-                                <span class="dropdown-perfil-email">isabela.bastos@email.com</span>
+                                <strong id="perfil-header-nome">Leitor</strong>
+                                <span class="dropdown-perfil-email" id="perfil-header-email">leitor@email.com</span>
                             </div>
 
                             <div class="dropdown-perfil-menu">
@@ -101,16 +108,15 @@
                 </div>
             </header>
 
-           <!-- ================= ABA: MEU PAINEL ================= -->
+            <!-- ================= ABA 1: MEU PAINEL ================= -->
             <div id="aba-painel" class="aba-conteudo">
-                <!-- Grid de Resumos Rápidos do Leitor -->
                 <div class="metrics-grid">
                     <div class="metric-card">
                         <div class="metric-card-header">
                             <div class="metric-value" id="leitor-qtd-emprestimos">...</div>
                             <i data-lucide="book-open" class="icon-success"></i>
                         </div>
-                        <div class="metric-label">Livros Emprestados</div>
+                        <div class="metric-label">Empréstimos Ativos</div>
                     </div>
 
                     <div class="metric-card">
@@ -130,36 +136,27 @@
                     </div>
                 </div>
 
-                <!-- Listagem de Empréstimos Atuais -->
                 <div class="section-card">
-                    <h3 class="metric-card-header" style="font-size: 16px; margin-bottom: 16px;">Meus Empréstimos Ativos</h3>
-                    
+                    <h3 class="metric-card-header" style="font-size: 16px; margin-bottom: 16px;">Resumo dos Seus Empréstimos</h3>
                     <div class="admin-table-container">
-                        <table class="admin-table" id="tabela-meus-emprestimos">
+                        <table class="admin-table" id="tabela-resumo-emprestimos">
                             <thead>
                                 <tr><th>Livro</th><th>Data de Retirada</th><th>Prazo de Devolução</th><th>Status</th><th>Ações</th></tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td colspan="5" style="text-align: center; color: var(--muted-foreground);">Carregando seus empréstimos...</td>
-                                </tr>
+                                <tr><td colspan="5" class="empty-table-row">Carregando dados...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- ================= ABA: BUSCAR LIVROS ================= -->
+            <!-- ================= ABA 2: BUSCAR LIVROS ================= -->
             <div id="aba-buscar" class="aba-conteudo" style="display: none;">
                 <div class="table-controls">
                     <input type="text" class="search-input" placeholder="Pesquisar por título, autor ou gênero...">
-                    
                     <select class="select-filter">
                         <option value="">Todos os Gêneros</option>
-                    </select>
-
-                    <select class="select-filter">
-                        <option value="">Disponibilidade</option>
                     </select>
                 </div>
 
@@ -169,13 +166,46 @@
                             <tr><th>Capa</th><th>Título</th><th>Autor</th><th>Gênero</th><th>Status</th><th>Ações</th></tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td colspan="6" style="text-align: center; color: var(--muted-foreground);">Carregando catálogo de livros...</td>
-                            </tr>
+                            <tr><td colspan="6" class="empty-table-row">Carregando catálogo de livros...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            <!-- ================= ABA 3: MEUS EMPRÉSTIMOS ================= -->
+            <div id="aba-emprestimos" class="aba-conteudo" style="display: none;">
+                <div class="section-card">
+                    <h3 style="font-size: 18px; margin-bottom: 16px;">Histórico e Gestão de Empréstimos</h3>
+                    <div class="admin-table-container">
+                        <table class="admin-table" id="tabela-meus-emprestimos">
+                            <thead>
+                                <tr><th>Livro</th><th>Data de Retirada</th><th>Prazo de Devolução</th><th>Status</th><th>Ações</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="5" class="empty-table-row">Carregando seus empréstimos...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= ABA 4: MINHAS RESERVAS ================= -->
+            <div id="aba-reservas" class="aba-conteudo" style="display: none;">
+                <div class="section-card">
+                    <h3 style="font-size: 18px; margin-bottom: 16px;">Fila de Espera e Retiradas</h3>
+                    <div class="admin-table-container">
+                        <table class="admin-table" id="tabela-minhas-reservas">
+                            <thead>
+                                <tr><th>Livro Reservado</th><th>Data da Solicitação</th><th>Status</th><th>Ações</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="4" class="empty-table-row">Carregando suas reservas...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 
@@ -190,9 +220,7 @@
             <div class="modal-perfil-body">
                 <div class="modal-perfil-identidade">
                     <div class="avatar-circle avatar-lg">IB</div>
-                    <div>
-                        <strong>Isabela Bastos</strong>
-                    </div>
+                    <div><strong id="modal-perfil-nome">Leitor</strong></div>
                 </div>
 
                 <div class="sub-nav-buttons" style="margin-bottom: 20px;">
@@ -200,40 +228,16 @@
                     <button type="button" class="btn-subnav btn-tab-perfil" id="tab-perfil-senha" onclick="alternarAbaPerfil('senha', this)">Alterar Senha</button>
                 </div>
 
-                <!-- SUBABA: INFORMAÇÕES -->
                 <div id="subaba-perfil-informacoes" class="subaba-perfil">
-                    <div class="input-group">
-                        <label>Nome completo</label>
-                        <input type="text" value="Isabela Bastos">
-                    </div>
-                    <div class="input-group">
-                        <label>E-mail</label>
-                        <input type="email" value="isabela.bastos@email.com">
-                    </div>
-                    <div class="input-group">
-                        <label>Telefone</label>
-                        <input type="text" value="(11) 98765-4321">
-                    </div>
-                    <div class="input-group">
-                        <label>Nível de acesso</label>
-                        <input type="text" value="Leitor  (não editável)" disabled>
-                    </div>
+                    <div class="input-group"><label>Nome completo</label><input type="text" id="modal-input-nome"></div>
+                    <div class="input-group"><label>E-mail</label><input type="email" id="modal-input-email"></div>
+                    <div class="input-group"><label>Nível de acesso</label><input type="text" value="Leitor (não editável)" disabled></div>
                 </div>
 
-                <!-- SUBABA: ALTERAR SENHA -->
                 <div id="subaba-perfil-senha" class="subaba-perfil" style="display: none;">
-                    <div class="input-group">
-                        <label>Senha atual</label>
-                        <input type="password" placeholder="••••••••">
-                    </div>
-                    <div class="input-group">
-                        <label>Nova senha</label>
-                        <input type="password" placeholder="••••••••">
-                    </div>
-                    <div class="input-group">
-                        <label>Confirmar nova senha</label>
-                        <input type="password" placeholder="••••••••">
-                    </div>
+                    <div class="input-group"><label>Senha atual</label><input type="password" placeholder="••••••••"></div>
+                    <div class="input-group"><label>Nova senha</label><input type="password" placeholder="••••••••"></div>
+                    <div class="input-group"><label>Confirmar nova senha</label><input type="password" placeholder="••••••••"></div>
                 </div>
             </div>
 
