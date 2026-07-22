@@ -42,5 +42,5 @@ Devido ao uso de Módulos JavaScript (`type="module"`) e variáveis de ambiente 
 
 ### 1. Clonar o repositório
 ```bash
-git clone [https://github.com/seu-usuario/nome-do-repositorio.git](https://github.com/seu-usuario/nome-do-repositorio.git)
-cd nome-do-repositorio
+git clone https://github.com/PCFSP/sistema-de-biblioteca.git
+cd sistema-de-biblioteca
