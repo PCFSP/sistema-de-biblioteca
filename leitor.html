@@ -219,7 +219,7 @@
 
             <div class="modal-perfil-body">
                 <div class="modal-perfil-identidade">
-                    <div class="avatar-circle avatar-lg">IB</div>
+                    <div class="avatar-circle avatar-lg" id="modal-perfil-avatar">IB</div>
                     <div><strong id="modal-perfil-nome">Leitor</strong></div>
                 </div>
 
@@ -231,19 +231,20 @@
                 <div id="subaba-perfil-informacoes" class="subaba-perfil">
                     <div class="input-group"><label>Nome completo</label><input type="text" id="modal-input-nome"></div>
                     <div class="input-group"><label>E-mail</label><input type="email" id="modal-input-email"></div>
+                    <div class="input-group"><label>Telefone</label><input type="text" id="modal-input-telefone"></div>
                     <div class="input-group"><label>Nível de acesso</label><input type="text" value="Leitor (não editável)" disabled></div>
                 </div>
 
                 <div id="subaba-perfil-senha" class="subaba-perfil" style="display: none;">
-                    <div class="input-group"><label>Senha atual</label><input type="password" placeholder="••••••••"></div>
-                    <div class="input-group"><label>Nova senha</label><input type="password" placeholder="••••••••"></div>
-                    <div class="input-group"><label>Confirmar nova senha</label><input type="password" placeholder="••••••••"></div>
+                    <div class="input-group"><label>Senha atual</label><input type="password" id="modal-input-senha-atual" placeholder="••••••••"></div>
+                    <div class="input-group"><label>Nova senha</label><input type="password" id="modal-input-senha-nova" placeholder="••••••••"></div>
+                    <div class="input-group"><label>Confirmar nova senha</label><input type="password" id="modal-input-senha-confirma" placeholder="••••••••"></div>
                 </div>
             </div>
 
             <div class="modal-perfil-footer">
                 <button type="button" class="btn-secondary" onclick="fecharModalPerfil()">Cancelar</button>
-                <button type="button" class="btn-primary" onclick="fecharModalPerfil()">Salvar</button>
+                <button type="button" class="btn-primary" id="btn-modal-salvar-perfil">Salvar</button>
             </div>
         </div>
     </div>
