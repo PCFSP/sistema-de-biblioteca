@@ -19,8 +19,13 @@ if (formLogin) {
 
             querySnapshot.forEach((docSnap) => {
                 const user = docSnap.data();
-                // Validação simples combinando e-mail (usando o CPF ou e-mail como senha para testes locais)
-                if (user.email === emailInserido && (user.cpf === senhaInserida || senhaInserida === "123456")) {
+                // Se o usuário já definiu uma senha própria (via "Alterar Senha"), ela é a autoridade.
+                // Caso contrário, mantém a senha padrão (CPF ou "123456") para o primeiro acesso.
+                const senhaValida = user.senha
+                    ? user.senha === senhaInserida
+                    : (user.cpf === senhaInserida || senhaInserida === "123456");
+
+                if (user.email === emailInserido && senhaValida) {
                     usuarioEncontrado = user;
                 }
             });

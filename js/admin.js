@@ -22,14 +22,15 @@
             const user = docSnap.data();
             if (user.email === emailLogado) {
                 const cargo = user.tipoUser ? user.tipoUser.toLowerCase().trim() : "";
-                if (cargo === "admin" || cargo === "administrador") {
+                // admin.js é compartilhado entre admin.html e biblio.html, então aceita os dois cargos
+                if (cargo === "admin" || cargo === "administrador" || cargo === "bibliotecario") {
                     ehAdmin = true;
                 }
             }
         });
 
         if (!ehAdmin) {
-            mostrarNotificacao("Área restrita para administradores! Redirecionando...", "error");
+            mostrarNotificacao("Área restrita para administradores ou bibliotecários! Redirecionando...", "error");
             window.location.href = "login.html";
         }
     } catch (error) {
@@ -1385,6 +1386,246 @@ document.addEventListener("click", (e) => {
     }
 });
 
+
+// ==========================================================================
+// 9. PERFIL DO USUÁRIO LOGADO (CARREGAR DADOS / SALVAR / ALTERAR SENHA)
+// ==========================================================================
+let PERFIL_ATUAL_ID = null;
+let PERFIL_ATUAL_DADOS = null;
+
+function calcularIniciaisNome(nomeCompleto) {
+    if (!nomeCompleto) return "US";
+    const partes = nomeCompleto.trim().split(/\s+/).filter(Boolean);
+    if (partes.length === 0) return "US";
+    if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
+    return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+}
+
+function aplicarIniciaisAvatarPerfil(nomeCompleto) {
+    const iniciais = calcularIniciaisNome(nomeCompleto);
+    document.querySelectorAll(".header-profile .avatar-circle, #modal-perfil-foto-container .avatar-circle").forEach((el) => {
+        el.innerText = iniciais;
+        el.title = nomeCompleto;
+    });
+}
+
+function preencherFormularioPerfil() {
+    if (!PERFIL_ATUAL_DADOS) return;
+
+    const campoNome = document.getElementById("modal-input-nome");
+    const campoEmail = document.getElementById("modal-input-email");
+    const campoTelefone = document.getElementById("modal-input-telefone");
+
+    if (campoNome) campoNome.value = PERFIL_ATUAL_DADOS.nome || "";
+    if (campoEmail) campoEmail.value = PERFIL_ATUAL_DADOS.email || "";
+    if (campoTelefone) campoTelefone.value = PERFIL_ATUAL_DADOS.telefone || "";
+}
+
+// Busca no Firestore os dados reais do usuário logado (por e-mail) e preenche cabeçalho, dropdown e modal
+async function carregarPerfilLogado() {
+    const emailLogado = localStorage.getItem("usuario-logado-email");
+    if (!emailLogado) return;
+
+    try {
+        const querySnapshot = await getDocs(collection(db, "usuarios"));
+        let encontrado = null;
+        let idEncontrado = null;
+
+        querySnapshot.forEach((docSnap) => {
+            const u = docSnap.data();
+            if (u.email && u.email.toLowerCase() === emailLogado.toLowerCase()) {
+                encontrado = u;
+                idEncontrado = docSnap.id;
+            }
+        });
+
+        if (!encontrado) return;
+
+        PERFIL_ATUAL_ID = idEncontrado;
+        PERFIL_ATUAL_DADOS = encontrado;
+
+        const elNomeHeader = document.getElementById("perfil-header-nome");
+        const elEmailHeader = document.getElementById("perfil-header-email");
+        const elModalNome = document.getElementById("modal-perfil-nome");
+
+        if (elNomeHeader) elNomeHeader.innerText = encontrado.nome || "Usuário";
+        if (elEmailHeader) elEmailHeader.innerText = encontrado.email || "";
+        if (elModalNome) elModalNome.innerText = encontrado.nome || "Usuário";
+
+        aplicarIniciaisAvatarPerfil(encontrado.nome);
+        preencherFormularioPerfil();
+
+    } catch (error) {
+        console.error("Erro ao carregar dados do perfil:", error);
+    }
+}
+
+// Salva Nome / E-mail / Telefone (aba "Informações")
+async function salvarInformacoesPerfil() {
+    if (!PERFIL_ATUAL_ID || !PERFIL_ATUAL_DADOS) {
+        mostrarNotificacao("Não foi possível identificar seu usuário. Faça login novamente.", "error");
+        return;
+    }
+
+    const nome = document.getElementById("modal-input-nome")?.value.trim();
+    const email = document.getElementById("modal-input-email")?.value.trim().toLowerCase();
+    const telefone = document.getElementById("modal-input-telefone")?.value.trim();
+
+    if (!nome || nome.split(/\s+/).filter(Boolean).length < 2) {
+        mostrarNotificacao("Informe seu nome completo (nome e sobrenome).", "error");
+        return;
+    }
+
+    if (!email || !email.includes("@") || !email.includes(".")) {
+        mostrarNotificacao("Informe um e-mail válido.", "error");
+        return;
+    }
+
+    try {
+        // Garante que o e-mail não pertence a outra conta já cadastrada
+        if (email !== (PERFIL_ATUAL_DADOS.email || "").toLowerCase()) {
+            const querySnapshot = await getDocs(collection(db, "usuarios"));
+            let emailEmUso = false;
+
+            querySnapshot.forEach((docSnap) => {
+                const outro = docSnap.data();
+                if (docSnap.id !== PERFIL_ATUAL_ID && outro.email && outro.email.toLowerCase() === email) {
+                    emailEmUso = true;
+                }
+            });
+
+            if (emailEmUso) {
+                mostrarNotificacao("Este e-mail já está sendo utilizado por outra conta.", "error");
+                return;
+            }
+        }
+
+        await updateDoc(doc(db, "usuarios", PERFIL_ATUAL_ID), {
+            nome,
+            email,
+            telefone: telefone || ""
+        });
+
+        PERFIL_ATUAL_DADOS.nome = nome;
+        PERFIL_ATUAL_DADOS.email = email;
+        PERFIL_ATUAL_DADOS.telefone = telefone;
+
+        // Mantém o localStorage sincronizado, já que login.html e o controle de acesso dependem dele
+        localStorage.setItem("usuario-logado-nome", nome);
+        localStorage.setItem("usuario-logado-email", email);
+
+        const elNomeHeader = document.getElementById("perfil-header-nome");
+        const elEmailHeader = document.getElementById("perfil-header-email");
+        const elModalNome = document.getElementById("modal-perfil-nome");
+
+        if (elNomeHeader) elNomeHeader.innerText = nome;
+        if (elEmailHeader) elEmailHeader.innerText = email;
+        if (elModalNome) elModalNome.innerText = nome;
+
+        aplicarIniciaisAvatarPerfil(nome);
+
+        mostrarNotificacao("Perfil atualizado com sucesso!", "success");
+        if (typeof window.fecharModalPerfil === "function") window.fecharModalPerfil();
+
+        // Reflete o nome/e-mail atualizado nas listagens que dependem disso
+        if (typeof listarUsuariosBanco === "function") listarUsuariosBanco();
+
+    } catch (error) {
+        console.error("Erro ao salvar perfil:", error);
+        mostrarNotificacao("Erro ao salvar as alterações do perfil.", "error");
+    }
+}
+
+// Salva a nova senha (aba "Alterar Senha"), validando a senha atual da mesma forma que o login faz
+async function salvarNovaSenhaPerfil() {
+    if (!PERFIL_ATUAL_ID || !PERFIL_ATUAL_DADOS) {
+        mostrarNotificacao("Não foi possível identificar seu usuário. Faça login novamente.", "error");
+        return;
+    }
+
+    const campoAtual = document.getElementById("modal-input-senha-atual");
+    const campoNova = document.getElementById("modal-input-senha-nova");
+    const campoConfirma = document.getElementById("modal-input-senha-confirma");
+
+    const atual = campoAtual?.value || "";
+    const nova = campoNova?.value || "";
+    const confirma = campoConfirma?.value || "";
+
+    if (!atual || !nova || !confirma) {
+        mostrarNotificacao("Preencha todos os campos de senha.", "error");
+        return;
+    }
+
+    // A mesma regra de validação usada no login: senha própria se existir, senão CPF ou "123456"
+    const senhaAtualValida = PERFIL_ATUAL_DADOS.senha
+        ? PERFIL_ATUAL_DADOS.senha === atual
+        : (PERFIL_ATUAL_DADOS.cpf === atual || atual === "123456");
+
+    if (!senhaAtualValida) {
+        mostrarNotificacao("Senha atual incorreta.", "error");
+        return;
+    }
+
+    if (nova.length < 6) {
+        mostrarNotificacao("A nova senha deve ter pelo menos 6 caracteres.", "error");
+        return;
+    }
+
+    if (nova !== confirma) {
+        mostrarNotificacao("A confirmação não corresponde à nova senha.", "error");
+        return;
+    }
+
+    if (nova === atual) {
+        mostrarNotificacao("A nova senha deve ser diferente da senha atual.", "error");
+        return;
+    }
+
+    try {
+        await updateDoc(doc(db, "usuarios", PERFIL_ATUAL_ID), { senha: nova });
+        PERFIL_ATUAL_DADOS.senha = nova;
+
+        mostrarNotificacao("Senha alterada com sucesso!", "success");
+
+        if (campoAtual) campoAtual.value = "";
+        if (campoNova) campoNova.value = "";
+        if (campoConfirma) campoConfirma.value = "";
+
+        if (typeof window.fecharModalPerfil === "function") window.fecharModalPerfil();
+
+    } catch (error) {
+        console.error("Erro ao alterar senha:", error);
+        mostrarNotificacao("Erro ao alterar a senha.", "error");
+    }
+}
+
+// Decide qual aba está ativa no momento do clique em "Salvar" e chama a rotina certa
+async function salvarPerfilLogado() {
+    const abaSenha = document.getElementById("subaba-perfil-senha");
+    const abaSenhaAtiva = abaSenha && abaSenha.style.display !== "none";
+
+    if (abaSenhaAtiva) {
+        await salvarNovaSenhaPerfil();
+    } else {
+        await salvarInformacoesPerfil();
+    }
+}
+
+// Sempre que o dropdown abrir o modal, repopula os campos com os dados mais recentes
+document.addEventListener("click", (e) => {
+    if (e.target.closest(".dropdown-perfil-menu button")) {
+        setTimeout(preencherFormularioPerfil, 50);
+    }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    carregarPerfilLogado();
+
+    const btnSalvarPerfil = document.getElementById("btn-modal-salvar-perfil");
+    if (btnSalvarPerfil) {
+        btnSalvarPerfil.addEventListener("click", salvarPerfilLogado);
+    }
+});
 
 // ==========================================================================
 // INICIALIZAÇÃO AUTOMÁTICA GERAL EM BLOCOS ISOLADOS (ANTI-TRAVAMENTO)

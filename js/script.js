@@ -136,6 +136,9 @@ function abrirModalPerfil(aba) {
         overlay.style.display = 'flex';
     }
 
+    // Por segurança, os campos de senha nunca devem vir preenchidos
+    limparCamposSenhaPerfil();
+
     const btnAlvo = document.getElementById(aba === 'senha' ? 'tab-perfil-senha' : 'tab-perfil-informacoes');
     alternarAbaPerfil(aba, btnAlvo);
 
@@ -149,6 +152,15 @@ function fecharModalPerfil() {
     if (overlay) {
         overlay.style.display = 'none';
     }
+
+    limparCamposSenhaPerfil();
+}
+
+function limparCamposSenhaPerfil() {
+    ['modal-input-senha-atual', 'modal-input-senha-nova', 'modal-input-senha-confirma'].forEach((id) => {
+        const campo = document.getElementById(id);
+        if (campo) campo.value = '';
+    });
 }
 
 function alternarAbaPerfil(aba, btnAtivo) {
@@ -167,6 +179,11 @@ function alternarAbaPerfil(aba, btnAtivo) {
 
     if (btnAtivo) {
         btnAtivo.classList.add('active');
+    }
+
+    // Toda vez que a aba de senha é aberta, os campos começam vazios
+    if (aba === 'senha') {
+        limparCamposSenhaPerfil();
     }
 
     if (typeof lucide !== 'undefined') {
