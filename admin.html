@@ -21,7 +21,6 @@
                     <text>Biblioteca</text>
                 </div>
 
-                <!-- Novo badge do Administrador -->
                 <div class="role-badge admin">
                     <i data-lucide="shield-check"></i>
                     <text>Administrador</text>
@@ -84,12 +83,11 @@
         <!-- ================= MAIN ================= -->
         <main class="main-dashboard">
             
-            <!-- Cabeçalho Dinâmico Superior -->
+            <!-- CABEÇALHO SUPERIOR -->
             <header class="dashboard-header">
                 <h2 id="titulo-pagina">Dashboard</h2>
                 
                 <div class="header-profile">
-                    <!-- Novo botão do Modo Noturno -->
                     <button class="btn-theme-toggle" onclick="toggleTheme()" title="Alternar Tema">
                         <i data-lucide="sun" id="theme-icon"></i>
                     </button>
@@ -196,7 +194,7 @@
             <!-- ================= TELA: ACERVO ================= -->
             <div id="tela-acervo" class="aba-conteudo" style="display: none;">
                 <div class="table-controls">
-                    <input type="text" class="search-input" placeholder="Buscar por título ou autor...">
+                    <input type="text" class="search-input" placeholder="Buscar por título, autor ou ISBN...">
                     
                     <select class="select-filter" id="filtro-acervo-genero">
                         <option value="">Todos (Gêneros)</option>
@@ -232,7 +230,7 @@
                     <span>Voltar ao acervo</span>
                 </button>
 
-                <!-- INÍCIO DO BLOCO DE PESQUISA (OPEN LIBRARY) -->
+                <!-- BLOCO DE PESQUISA (OPEN LIBRARY) -->
                 <div class="section-card" style="margin-bottom: 20px;">
                     <h3 style="margin-bottom: 15px;">Auto-preencher via Catálogo Global</h3>
 
@@ -246,8 +244,8 @@
                     <small id="autofill-status" style="display: block; margin-top: 10px; font-weight: bold;"></small>
                     <div id="autofill-results" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;"></div>
                 </div>
-                <!-- FIM DO BLOCO DE PESQUISA -->
 
+                <!-- FORMULÁRIO DE INFORMAÇÕES DO LIVRO -->
                 <div class="form-container">
                     <div class="section-card">
                         <h3 style="margin-bottom: 20px;">Informações do Livro</h3>
@@ -313,16 +311,13 @@
 
             <!-- ================= TELA: DEVOLUÇÕES ================= -->
             <div id="tela-devolucoes" class="aba-conteudo" style="display: none;">
-                
-                <!-- Barra de ferramentas limpa com o filtro mantido à direita -->
                 <div class="table-controls" style="justify-content: space-between;">
                     <input type="text" class="search-input" placeholder="Buscar por leitor ou livro devolvido...">
                     
                     <select class="select-filter">
-                        <option value="">Todos os períodos</option>
-                        <option value="hoje">Hoje</option>
-                        <option value="semana">Esta semana</option>
-                        <option value="mes">Este mês</option>
+                        <option value="">Todos os Registros</option>
+                        <option value="pendentes">Apenas Pendentes</option>
+                        <option value="concluidos">Apenas Devoluções Concluídas</option>
                     </select>
                 </div>
 
@@ -342,26 +337,35 @@
 
             <!-- ================= TELA: EMPRÉSTIMOS ================= -->
             <div id="tela-emprestimos" class="aba-conteudo" style="display: none;">
-                <div class="table-controls" style="justify-content: flex-end;">
-                    <button class="btn-primary" onclick="alternarFormEmprestimo(true)">+ Novo Empréstimo</button>
+                <div class="table-controls" style="justify-content: space-between;">
+                    <input type="text" class="search-input" placeholder="Buscar por leitor ou livro...">
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <select class="select-filter">
+                            <option value="">Todos os Status</option>
+                            <option value="Em andamento">Em andamento</option>
+                            <option value="Atrasado">Atrasado</option>
+                            <option value="Solicitado">Solicitado</option>
+                        </select>
+                        <button class="btn-primary" onclick="alternarFormEmprestimo(true)">+ Novo Empréstimo</button>
+                    </div>
                 </div>
 
                 <!-- Formulário de Registro de Empréstimo -->
-                <div id="form-registro-emprestimo" class="section-card" style="display: none; position: relative;">
+                <div id="form-registro-emprestimo" class="section-card" style="display: none; position: relative; margin-top: 15px;">
                     <h3 style="font-size: 18px; margin-bottom: 20px;">Registrar Empréstimo</h3>
                     <form>
                         <div class="form-row">
                             <div class="input-group">
                                 <label>Leitor</label>
-                                <select class="select-input" id="select-emprestimo-leitor">
-                                    <option value="">Carregando leitores...</option>
-                                </select>
+                                <input type="text" id="select-emprestimo-leitor" list="list-leitores-autocomplete" placeholder="Selecione ou digite o nome do leitor...">
+                                <datalist id="list-leitores-autocomplete"></datalist>
                             </div>
+
                             <div class="input-group">
                                 <label>Livro Disponível</label>
-                                <select class="select-input" id="select-emprestimo-livro">
-                                    <option value="">Carregando livros disponíveis...</option>
-                                </select>
+                                <input type="text" id="select-emprestimo-livro" list="list-livros-autocomplete" placeholder="Selecione ou digite o título do livro...">
+                                <datalist id="list-livros-autocomplete"></datalist>
                             </div>
                         </div>
 
@@ -386,11 +390,11 @@
                 <div class="admin-table-container">
                     <table class="admin-table">
                         <thead>
-                            <tr><th>Leitor</th><th>Livro</th><th>Retirada</th><th>Devolução</th><th>Status</th></tr>
+                            <tr><th>Leitor</th><th>Livro</th><th>Retirada</th><th>Devolução</th><th>Status</th><th>Ações</th></tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td colspan="5" style="text-align: center; color: var(--muted-foreground);">Carregando empréstimos do Firebase...</td>
+                                <td colspan="6" style="text-align: center; color: var(--muted-foreground);">Carregando empréstimos do Firebase...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -425,7 +429,6 @@
             <!-- ================= TELA: USUÁRIOS ================= -->
             <div id="tela-usuarios" class="aba-conteudo" style="display: none;">
                 <div class="table-controls table-controls-usuarios">
-                    <!-- Subnavegação Unificada de Usuários -->
                     <div class="sub-nav-buttons">
                         <button class="btn-subnav active" id="btn-tab-leitores" onclick="alternarAbaUsuarios('leitores', this)">
                             <i data-lucide="book-open" class="icon-small"></i> Leitores
