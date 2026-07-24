@@ -1,28 +1,25 @@
 // ==========================================================================
-// CONTROLE DE ACESSO: APENAS ADMINISTRADORES
+// CONTROLE DE ACESSO: APENAS ADMINISTRADORES OU BIBLIOTECÁRIOS
 // ==========================================================================
 (async function verificarAcessoAdmin() {
     const nomeLogado = localStorage.getItem("usuario-logado-nome");
     const emailLogado = localStorage.getItem("usuario-logado-email");
 
-    // Se não houver dados de login no navegador, barra imediatamente
     if (!nomeLogado || !emailLogado) {
         mostrarNotificacao("Acesso negado! Por favor, faça login.", "error");
         window.location.href = "login.html";
         return;
     }
 
-    // Importação dinâmica temporária para validar o cargo direto no banco de dados
-    const { db, collection, getDocs } = await import("./firebase-config.js");
     try {
+        const { db, collection, getDocs } = await import("./firebase-config.js");
         const querySnapshot = await getDocs(collection(db, "usuarios"));
         let ehAdmin = false;
 
         querySnapshot.forEach((docSnap) => {
             const user = docSnap.data();
-            if (user.email === emailLogado) {
+            if (user.email && user.email.toLowerCase() === emailLogado.toLowerCase()) {
                 const cargo = user.tipoUser ? user.tipoUser.toLowerCase().trim() : "";
-                // admin.js é compartilhado entre admin.html e biblio.html, então aceita os dois cargos
                 if (cargo === "admin" || cargo === "administrador" || cargo === "bibliotecario") {
                     ehAdmin = true;
                 }
@@ -30,66 +27,83 @@
         });
 
         if (!ehAdmin) {
-            mostrarNotificacao("Área restrita para administradores ou bibliotecários! Redirecionando...", "error");
+            mostrarNotificacao("Área restrita para administradores ou bibliotecários!", "error");
             window.location.href = "login.html";
         }
     } catch (error) {
-        window.location.href = "login.html";
+        console.error("Erro na verificação de acesso:", error);
     }
 })();
 
 import { db, collection, addDoc, getDocs, doc, deleteDoc, updateDoc, getDoc } from "./firebase-config.js";
 
 // ==========================================================================
-// FUNÇÃO AUXILIAR: TRATAMENTO E CONVERSÃO DE DATAS PARA CÁLCULO
+// FUNÇÕES AUXILIARES E NAVEGAÇÃO GLOBAL
 // ==========================================================================
-
 function tratarData(dataBanco) {
     if (!dataBanco) return new Date();
-    
-    // Se já for um Timestamp do Firebase
-    if (typeof dataBanco.toDate === "function") {
-        return dataBanco.toDate();
-    }
-    
-    // Se for uma String no formato brasileiro DD/MM/AAAA
+    if (typeof dataBanco.toDate === "function") return dataBanco.toDate();
     if (typeof dataBanco === "string" && dataBanco.includes("/")) {
         const partes = dataBanco.split("/");
-        // JavaScript Date usa mês baseado em 0 (Janeiro = 0)
         return new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
     }
-    
-    // Qualquer outro formato padrão (String ISO, etc.)
     const dataTenta = new Date(dataBanco);
     return isNaN(dataTenta.getTime()) ? new Date() : dataTenta;
 }
 
-// ==========================================================================
-// CENTRALIZADOR DE TROCA DE ABAS / GATILHOS DO BANCO (CORRIGIDO)
-// ==========================================================================
-document.addEventListener("click", (e) => {
-    const itemMenu = e.target.closest(".sidebar-item");
-    if (!itemMenu) return;
+// NAVEGAÇÃO DE TELAS NO PAINEL ADMIN
+window.navegar = function(tela) {
+    const telas = document.querySelectorAll(".aba-conteudo");
+    telas.forEach(t => t.style.display = "none");
 
-    const idTela = itemMenu.getAttribute("data-tela");
-    
-    setTimeout(() => {
-        if (idTela === "dashboard") carregarMétricasDashboard();
-        if (idTela === "acervo") listarAcervoBanco();
-        if (idTela === "emprestimos") {
-            listarEmprestimosBanco();
-            carregarSelectsEmprestimo();
+    const telaAlvo = document.getElementById(`tela-${tela}`);
+    if (telaAlvo) {
+        telaAlvo.style.display = "block";
+    }
+
+    const itensMenu = document.querySelectorAll(".sidebar-menu .sidebar-item");
+    itensMenu.forEach(item => {
+        if (item.getAttribute("data-tela") === tela) {
+            item.classList.add("active");
+        } else {
+            item.classList.remove("active");
         }
-        if (idTela === "devolucoes") listarEmprestimosParaDevolucao();
-        if (idTela === "configuracoes") carregarConfiguracoesBanco();
-        if (idTela === "usuarios") listarUsuariosBanco(); // Garante o disparo ao clicar na aba
-        if (idTela === "reservas") listarReservasBanco();
-    }, 150);
-});
+    });
 
-// Tornar funções de deleção/edição globais para o HTML conseguir chamar nos botões onclick
+    const tituloPagina = document.getElementById("titulo-pagina");
+    if (tituloPagina) {
+        const titulos = {
+            dashboard: "Dashboard",
+            acervo: "Acervo de Livros",
+            "novo-livro": "Cadastrar / Editar Livro",
+            emprestimos: "Gestão de Empréstimos",
+            devolucoes: "Fluxo de Devoluções",
+            reservas: "Reservas de Livros",
+            usuarios: "Gestão de Usuários",
+            relatorios: "Relatórios Gerais",
+            configuracoes: "Configurações do Sistema"
+        };
+        tituloPagina.innerText = titulos[tela] || "Painel do Administrador";
+    }
+
+    // SE CLICOU EM NOVO LIVRO E NÃO ESTÁ EM MODO DE EDIÇÃO, LIMPA TUDO
+    if (tela === "novo-livro") {
+        const btnSalvar = document.getElementById("btn-salvar-livro");
+        if (btnSalvar && !btnSalvar.dataset.editId) {
+            window.limparFormularioLivro();
+        }
+    }
+
+    if (tela === "dashboard") carregarMétricasDashboard();
+    if (tela === "acervo") listarAcervoBanco();
+    if (tela === "emprestimos") { listarEmprestimosBanco(); carregarSelectsEmprestimo(); }
+    if (tela === "devolucoes") listarEmprestimosParaDevolucao();
+    if (tela === "configuracoes") carregarConfiguracoesBanco();
+    if (tela === "usuarios") listarUsuariosBanco();
+    if (tela === "reservas") listarReservasBanco();
+};
+
 window.deletarDocumento = async function(colecao, id) {
-    // Mapeamento para traduzir o nome da coleção técnica para o usuário
     const nomesAmigaveis = {
         'books': 'este livro',
         'usuarios': 'este usuário',
@@ -97,12 +111,9 @@ window.deletarDocumento = async function(colecao, id) {
         'reservas': 'esta reserva'
     };
 
-    const nomeItem = nomesAmigaveis[colecao] || 'este registro';
-
-    // Dispara o SweetAlert2 customizado
     const confirmou = await confirmarAcao(
         "Tem certeza?",
-        `Esta ação excluirá permanentemente ${nomeItem} do banco de dados.`,
+        `Esta ação excluirá permanentemente ${nomesAmigaveis[colecao] || 'este registro'} do banco de dados.`,
         "Sim, excluir!"
     );
 
@@ -110,10 +121,8 @@ window.deletarDocumento = async function(colecao, id) {
 
     try {
         await deleteDoc(doc(db, colecao, id));
-        
         mostrarNotificacao("Registro removido com sucesso!", "success");
 
-        // Atualiza a tabela correspondente
         if (colecao === "books") listarAcervoBanco();
         if (colecao === "emprestimos") {
             listarEmprestimosBanco();
@@ -135,7 +144,6 @@ window.prepararEdicaoLivro = async function(id) {
         if (!docSnap.exists()) return;
         const livro = docSnap.data();
         
-        // Joga os valores para o formulário
         document.getElementById("input-livro-titulo").value = livro.titulo || "";
         document.getElementById("input-livro-autor").value = livro.autor || "";
         document.getElementById("input-livro-editora").value = livro.editora || "";
@@ -143,15 +151,41 @@ window.prepararEdicaoLivro = async function(id) {
         document.getElementById("input-livro-isbn").value = livro.isbn || "";
         document.getElementById("input-livro-capa").value = livro.capa || "";
         
-        // Altera o comportamento do botão salvar para atualizar em vez de criar novo
         const btn = document.getElementById("btn-salvar-livro");
-        btn.innerText = "Atualizar Livro";
-        btn.dataset.editId = id;
+        if (btn) {
+            btn.innerText = "Atualizar Livro";
+            btn.dataset.editId = id;
+        }
         
-        navegar("novo-livro");
+        window.navegar("novo-livro");
     } catch (error) {
-        console.error(error);
+        console.error("Erro ao preparar edição:", error);
     }
+};
+
+window.alternarFormEmprestimo = function(exibir) {
+    const form = document.getElementById("form-registro-emprestimo");
+    if (form) {
+        form.style.display = exibir ? "block" : "none";
+        if (exibir) carregarSelectsEmprestimo();
+    }
+};
+
+window.alternarFormUsuario = function(exibir) {
+    const form = document.getElementById("form-registro-usuario");
+    if (form) form.style.display = exibir ? "block" : "none";
+};
+
+window.alternarAbaUsuarios = function(subaba, btn) {
+    const subTelas = document.querySelectorAll(".subtela-usuarios");
+    subTelas.forEach(s => s.style.display = "none");
+
+    const subAlvo = document.getElementById(`subtela-${subaba}`);
+    if (subAlvo) subAlvo.style.display = "block";
+
+    const botoes = document.querySelectorAll(".table-controls-usuarios .btn-subnav");
+    botoes.forEach(b => b.classList.remove("active"));
+    if (btn) btn.classList.add("active");
 };
 
 // ==========================================================================
@@ -191,12 +225,10 @@ async function carregarMétricasDashboard() {
             let dataDevCompara = new Date(dataDevPrevista);
             dataDevCompara.setHours(0, 0, 0, 0);
 
-            // Verificação em tempo real se o item está atrasado
             const estaAtrasado = hoje > dataDevCompara || emp.status === "Atrasado";
 
             if (estaAtrasado) {
                 totalAtrasados++;
-
                 const diferencaTempo = hoje.getTime() - dataDevCompara.getTime();
                 const diasAtraso = Math.max(1, Math.ceil(diferencaTempo / (1000 * 60 * 60 * 24)));
                 const valorCalculado = (diasAtraso * valorMultaDiaria).toFixed(2).replace('.', ',');
@@ -221,7 +253,6 @@ async function carregarMétricasDashboard() {
             `;
         });
 
-        // Alimenta os 4 contadores de métricas superiores
         const cards = document.querySelectorAll(".metric-value");
         if (cards.length >= 4) {
             cards[0].innerText = queryLivros.size;
@@ -245,6 +276,7 @@ async function carregarMétricasDashboard() {
 // ==========================================================================
 // 2. TELA: ACERVO (LISTAR, CRIAR E EDITAR)
 // ==========================================================================
+let livrosAcervoAdminCache = [];
 
 async function listarAcervoBanco() {
     const tbody = document.querySelector("#tela-acervo .admin-table tbody");
@@ -253,39 +285,151 @@ async function listarAcervoBanco() {
 
     try {
         const querySnapshot = await getDocs(collection(db, "books"));
-        tbody.innerHTML = "";
+        const queryEmprestimos = await getDocs(collection(db, "emprestimos"));
 
-        querySnapshot.forEach((doc) => {
-            const livro = doc.data();
-            const capaHTML = livro.capa 
-                ? `<img src="${livro.capa}" style="width: 35px; height: 50px; border-radius: 4px; object-fit: cover;">`
-                : `<div class="table-cover"></div>`;
-
-            const linha = `
-                <tr>
-                    <td>${capaHTML}</td>
-                    <td><strong>${livro.titulo || "Sem título"}</strong></td>
-                    <td>${livro.autor || "Desconhecido"}</td>
-                    <td><span class="book-tag">${livro.categoria_idCategoria || "Geral"}</span></td>
-                    <td>${livro.isbn || "-"}</td>
-                    <td><strong>${livro.quantidade || 1}</strong></td>
-                    <td><span class="status-tag success">Disponível</span></td>
-                    <td>
-                        <button class="action-icon" onclick="prepararEdicaoLivro('${doc.id}')" title="Editar"><i data-lucide="pencil" class="icon-small"></i></button>
-                        <button class="action-icon btn-action-danger" onclick="deletarDocumento('books', '${doc.id}')" title="Excluir"><i data-lucide="trash-2" class="icon-small"></i></button>
-                    </td>
-                </tr>
-            `;
-            tbody.insertAdjacentHTML("beforeend", linha);
+        const livrosEmprestados = [];
+        queryEmprestimos.forEach(d => {
+            const emp = d.data();
+            if (emp.status !== "Devolvido" && emp.Exemplar_idExemplar) {
+                livrosEmprestados.push(emp.Exemplar_idExemplar.trim().toLowerCase());
+            }
         });
-        if (typeof lucide !== "undefined") lucide.createIcons();
+
+        livrosAcervoAdminCache = [];
+        const generosEncontrados = new Set();
+
+        querySnapshot.forEach((docSnap) => {
+            const livro = docSnap.data();
+            const idDoc = docSnap.id;
+            const titulo = livro.titulo || "Sem título";
+            const genero = livro.categoria_idCategoria || "Geral";
+            generosEncontrados.add(genero);
+
+            const estaEmprestado = livrosEmprestados.includes(titulo.trim().toLowerCase());
+            const statusTexto = estaEmprestado ? "Indisponível" : "Disponível";
+            const statusTag = estaEmprestado ? "danger" : "success";
+
+            livrosAcervoAdminCache.push({
+                id: idDoc,
+                ...livro,
+                titulo,
+                genero,
+                statusTexto,
+                statusTag
+            });
+        });
+
+        const selectGeneroAdmin = document.getElementById("filtro-acervo-genero");
+        if (selectGeneroAdmin) {
+            const valAtual = selectGeneroAdmin.value;
+            selectGeneroAdmin.innerHTML = `<option value="">Todos (Gêneros)</option>`;
+            Array.from(generosEncontrados).sort().forEach(g => {
+                selectGeneroAdmin.innerHTML += `<option value="${g}">${g}</option>`;
+            });
+            selectGeneroAdmin.value = valAtual;
+        }
+
+        renderizarTabelaAcervoAdmin();
+
     } catch (error) {
-        console.error(error);
+        console.error("Erro ao listar acervo no admin:", error);
     }
 }
 
-const btnSalvarLivro = document.getElementById("btn-salvar-livro");
+function renderizarTabelaAcervoAdmin() {
+    const tbody = document.querySelector("#tela-acervo .admin-table tbody");
+    if (!tbody) return;
 
+    const inputBusca = document.querySelector("#tela-acervo .search-input")?.value.toLowerCase().trim() || "";
+    const filtroGenero = document.getElementById("filtro-acervo-genero")?.value || "";
+    const filtroStatus = document.querySelectorAll("#tela-acervo .select-filter")[1]?.value || "";
+
+    const filtrados = livrosAcervoAdminCache.filter(livro => {
+        const bateTexto = (livro.titulo || "").toLowerCase().includes(inputBusca) ||
+                          (livro.autor || "").toLowerCase().includes(inputBusca) ||
+                          (livro.genero || "").toLowerCase().includes(inputBusca) ||
+                          (livro.isbn || "").toLowerCase().includes(inputBusca);
+
+        const bateGenero = !filtroGenero || livro.genero === filtroGenero;
+
+        let bateStatus = true;
+        if (filtroStatus === "disponivel") bateStatus = livro.statusTexto === "Disponível";
+        else if (filtroStatus === "indisponivel") bateStatus = livro.statusTexto === "Indisponível";
+
+        return bateTexto && bateGenero && bateStatus;
+    });
+
+    tbody.innerHTML = "";
+
+    if (filtrados.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--muted-foreground);">Nenhum livro encontrado com esses filtros.</td></tr>`;
+        return;
+    }
+
+    filtrados.forEach((livro) => {
+        const tituloEscapado = (livro.titulo || "").replace(/'/g, "\\'");
+        
+        // Se houver capa, renderiza a imagem com onerror para trocar caso o link quebre.
+        // Se não houver capa, renderiza direto a capa CSS.
+        const capaHTML = livro.capa 
+            ? `<img src="${livro.capa}" class="table-cover-img" onerror="this.outerHTML=window.gerarCapaPlaceholder('${tituloEscapado}')">`
+            : window.gerarCapaPlaceholder(livro.titulo);
+
+        const linha = `
+            <tr>
+                <td>${capaHTML}</td>
+                <td><strong>${livro.titulo}</strong></td>
+                <td>${livro.autor || "Desconhecido"}</td>
+                <td><span class="book-tag">${livro.genero}</span></td>
+                <td>${livro.isbn || "-"}</td>
+                <td><strong>${livro.quantidade || 1}</strong></td>
+                <td><span class="status-tag ${livro.statusTag}">${livro.statusTexto}</span></td>
+                <td>
+                    <button class="action-icon" onclick="prepararEdicaoLivro('${livro.id}')" title="Editar"><i data-lucide="pencil" class="icon-small"></i></button>
+                    <button class="action-icon btn-action-danger" onclick="deletarDocumento('books', '${livro.id}')" title="Excluir"><i data-lucide="trash-2" class="icon-small"></i></button>
+                </td>
+            </tr>
+        `;
+        tbody.insertAdjacentHTML("beforeend", linha);
+    });
+
+    if (typeof lucide !== "undefined") lucide.createIcons();
+}
+
+window.limparFormularioLivro = function() {
+    // 1. Limpa os campos do formulário
+    const idsInputs = [
+        "input-livro-titulo", "input-livro-autor", "input-livro-editora",
+        "input-livro-ano", "input-livro-isbn", "input-livro-capa", 
+        "input-busca-catalogo"
+    ];
+
+    idsInputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = "";
+    });
+
+    const inputQtd = document.getElementById("input-livro-quantidade");
+    if (inputQtd) inputQtd.value = "1";
+
+    const inputGenero = document.getElementById("input-livro-genero");
+    if (inputGenero) inputGenero.value = "Geral";
+
+    // 2. Limpa avisos e resultados do autofill
+    const resultsContainer = document.getElementById("autofill-results");
+    const statusMsg = document.getElementById("autofill-status");
+    if (resultsContainer) resultsContainer.innerHTML = "";
+    if (statusMsg) statusMsg.textContent = "";
+
+    // 3. REMOVE O MODO DE EDIÇÃO DO BOTÃO
+    const btnSalvar = document.getElementById("btn-salvar-livro");
+    if (btnSalvar) {
+        btnSalvar.innerText = "Salvar Livro";
+        delete btnSalvar.dataset.editId; // Remove a chave de edição!
+    }
+};
+
+const btnSalvarLivro = document.getElementById("btn-salvar-livro");
 if (btnSalvarLivro) {
     btnSalvarLivro.addEventListener("click", async () => {
         const titulo = document.getElementById("input-livro-titulo")?.value.trim();
@@ -300,7 +444,7 @@ if (btnSalvarLivro) {
         if (!titulo || !autor) return mostrarNotificacao("Preencha Título e Autor!", "warning");
 
         try {
-            // TRAVA ANTI-DUPLICIDADE DE LIVRO (Se não for edição)
+            // Se NÃO tiver o editId, faz a trava anti-duplicidade
             if (!btnSalvarLivro.dataset.editId) {
                 const queryLivros = await getDocs(collection(db, "books"));
                 let livroExistente = false;
@@ -311,24 +455,18 @@ if (btnSalvarLivro) {
                     const tituloExistente = l.titulo ? l.titulo.trim().toLowerCase() : "";
                     const autorExistente = l.autor ? l.autor.trim().toLowerCase() : "";
 
-                    // Compara por ISBN ou por Título + Autor idênticos
                     if ((isbn && isbnExistente === isbn) || (tituloExistente === titulo.toLowerCase() && autorExistente === autor.toLowerCase())) {
                         livroExistente = true;
                     }
                 });
 
                 if (livroExistente) {
-                    mostrarNotificacao("Este livro já está cadastrado no acervo!", "warning");
-                    return;
+                    return mostrarNotificacao("Este livro já está cadastrado no acervo!", "warning");
                 }
             }
 
             const dadosLivro = {
-                titulo, 
-                autor, 
-                editora, 
-                isbn, 
-                capa,
+                titulo, autor, editora, isbn, capa,
                 ano_publicacao: parseInt(ano) || null,
                 categoria_idCategoria: genero,
                 quantidade: quantidade
@@ -337,14 +475,16 @@ if (btnSalvarLivro) {
             if (btnSalvarLivro.dataset.editId) {
                 await updateDoc(doc(db, "books", btnSalvarLivro.dataset.editId), dadosLivro);
                 mostrarNotificacao("Livro atualizado com sucesso!", "success");
-                delete btnSalvarLivro.dataset.editId;
-                btnSalvarLivro.innerText = "+ Salvar Livro";
             } else {
                 await addDoc(collection(db, "books"), dadosLivro);
                 mostrarNotificacao("Livro cadastrado com sucesso!", "success");
             }
 
-            navegar("acervo");
+            // LIMPA O FORMULÁRIO E RESETA O MODO DE EDIÇÃO
+            window.limparFormularioLivro();
+
+            // Volta para a tela do acervo
+            window.navegar("acervo");
             listarAcervoBanco();
             carregarMétricasDashboard();
 
@@ -354,8 +494,9 @@ if (btnSalvarLivro) {
         }
     });
 }
+
 // ==========================================================================
-// AUTO-PREENCHIMENTO: HÍBRIDO E ROBUSTO (DEBUGADO)
+// AUTO-PREENCHIMENTO DE LIVRO (OPEN LIBRARY / BRASIL API)
 // ==========================================================================
 
 window.resultadosCatalogoTemporarios = [];
@@ -379,124 +520,207 @@ function executarBusca() {
     const query = inputBusca ? inputBusca.value.trim() : "";
     if (!query) return;
 
-    const isbn = query.replace(/[-\s]/g, '');
-    
-    if (/^\d{10,13}$/.test(isbn)) {
-        buscarPorISBN(isbn);
+    // Limpa pontuações para testar se é apenas número (ISBN)
+    const textoLimpo = query.replace(/[^0-9X]/gi, '');
+    const contemLetras = /[a-wy-z]/i.test(query);
+    const ehIsbnPuro = (textoLimpo.length === 10 || textoLimpo.length === 13) && !contemLetras;
+
+    if (ehIsbnPuro) {
+        buscarPorISBNExato(textoLimpo);
     } else {
-        buscarPorTitulo(query);
+        buscarPorTituloAmpliado(query);
     }
 }
 
-async function buscarPorISBN(isbn) {
-    if (statusMsg) statusMsg.textContent = "Buscando ISBN...";
+async function buscarPorISBNExato(isbn) {
+    if (statusMsg) statusMsg.textContent = "Buscando por ISBN...";
     
-    // 1. Tenta Brasil API
+    // 1. Brasil API
     try {
         const resp = await fetch(`https://brasilapi.com.br/api/isbn/v1/${isbn}`);
         if (resp.ok) {
             const livro = await resp.json();
             salvarResultado([{
-                title: livro.title,
-                authors: livro.authors,
-                year: livro.year,
-                publisher: livro.publisher,
-                isbn: livro.isbn || isbn, // Garante que pegue o ISBN de retorno
+                title: livro.title || "",
+                authors: livro.authors || [],
+                year: livro.year ? String(livro.year) : "",
+                publisher: livro.publisher || "",
+                isbn: livro.isbn || isbn,
                 cover: livro.cover_url || ''
             }]);
             return;
         }
-    } catch (e) { console.error("Brasil API falhou:", e); }
+    } catch (e) { 
+        console.warn("Brasil API não encontrou:", e); 
+    }
 
-    // 2. Tenta Open Library
+    // 2. Google Books ISBN
     try {
-        const resp = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`);
+        const resp = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
         const data = await resp.json();
-        const livro = data[`ISBN:${isbn}`];
         
-        if (livro) {
+        if (data.items && data.items.length > 0) {
+            const info = data.items[0].volumeInfo || {};
             salvarResultado([{
-                title: livro.title,
-                authors: livro.authors?.map(a => a.name),
-                year: livro.publish_date?.substring(livro.publish_date.length - 4),
-                publisher: livro.publishers?.map(p => p.name)[0],
+                title: info.title || "",
+                authors: info.authors || [],
+                year: info.publishedDate ? info.publishedDate.substring(0, 4) : "",
+                publisher: info.publisher || "",
                 isbn: isbn,
-                cover: livro.cover?.medium || ''
+                cover: info.imageLinks?.thumbnail ? info.imageLinks.thumbnail.replace("http://", "https://") : ""
             }]);
             return;
         }
-    } catch (e) { console.error("Open Library ISBN falhou:", e); }
+    } catch (e) { 
+        console.warn("Google Books ISBN não encontrou:", e); 
+    }
 
-    if (statusMsg) statusMsg.textContent = "ISBN não encontrado.";
+    // Se falhar o ISBN exato, tenta buscar como texto geral
+    buscarPorTituloAmpliado(isbn);
 }
 
-async function buscarPorTitulo(query) {
-    if (statusMsg) statusMsg.textContent = "Buscando título...";
+async function buscarPorTituloAmpliado(query) {
+    if (statusMsg) statusMsg.textContent = "Pesquisando catálogo por título...";
+    
+    // 1. Google Books API (Serviço primário)
     try {
-        const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=5`;
-        const resp = await fetch(url);
+        const urlGoogle = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5&printType=books`;
+        const resp = await fetch(urlGoogle);
         const data = await resp.json();
-        
-        if (data.docs && data.docs.length > 0) {
-            const lista = data.docs.map(livro => {
-                // DEBUG: veja o que vem no console
-                console.log("Dados recebidos da API:", livro);
+
+        if (data.items && data.items.length > 0) {
+            const lista = data.items.map(item => {
+                const info = item.volumeInfo || {};
                 
+                let isbnVal = "";
+                if (info.industryIdentifiers && Array.isArray(info.industryIdentifiers)) {
+                    const isbn13 = info.industryIdentifiers.find(id => id.type === "ISBN_13");
+                    const isbn10 = info.industryIdentifiers.find(id => id.type === "ISBN_10");
+                    isbnVal = isbn13 ? isbn13.identifier : (isbn10 ? isbn10.identifier : "");
+                }
+
                 return {
-                    title: livro.title,
-                    authors: livro.author_name,
-                    year: livro.first_publish_year,
-                    publisher: livro.publisher ? livro.publisher[0] : "",
-                    // Pega o primeiro ISBN disponível ou uma string vazia
-                    isbn: (livro.isbn && livro.isbn.length > 0) ? livro.isbn[0] : "",
-                    cover: livro.cover_i ? `https://covers.openlibrary.org/b/id/${livro.cover_i}-M.jpg` : ''
+                    title: info.title || "Sem título",
+                    authors: info.authors || [],
+                    year: info.publishedDate ? info.publishedDate.substring(0, 4) : "",
+                    publisher: info.publisher || "",
+                    isbn: isbnVal,
+                    cover: info.imageLinks?.thumbnail ? info.imageLinks.thumbnail.replace("http://", "https://") : ""
                 };
             });
+
             salvarResultado(lista);
-        } else {
-            if (statusMsg) statusMsg.textContent = "Nenhum livro encontrado.";
+            return;
         }
-    } catch (e) { console.error("Falha Título:", e); }
+    } catch (e) { 
+        console.error("Erro Google Books Título:", e); 
+    }
+
+    // 2. Open Library (Serviço secundário)
+    try {
+        const urlOpenLib = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=5`;
+        const resp = await fetch(urlOpenLib);
+        const data = await resp.json();
+
+        if (data.docs && data.docs.length > 0) {
+            const lista = data.docs.map(livro => ({
+                title: livro.title || "Sem título",
+                authors: livro.author_name || [],
+                year: livro.first_publish_year ? String(livro.first_publish_year) : "",
+                publisher: (livro.publisher && livro.publisher.length > 0) ? livro.publisher[0] : "",
+                isbn: (livro.isbn && livro.isbn.length > 0) ? livro.isbn[0] : "",
+                cover: livro.cover_i ? `https://covers.openlibrary.org/b/id/${livro.cover_i}-M.jpg` : ""
+            }));
+
+            salvarResultado(lista);
+            return;
+        }
+    } catch (e) {
+        console.error("Erro Open Library Título:", e);
+    }
+
+    if (statusMsg) statusMsg.textContent = "Nenhum livro localizado para esta pesquisa.";
 }
 
 function salvarResultado(lista) {
     window.resultadosCatalogoTemporarios = lista;
     let html = "";
+
+    if (!Array.isArray(lista) || lista.length === 0) {
+        if (statusMsg) statusMsg.textContent = "Nenhum resultado disponível.";
+        return;
+    }
+
     lista.forEach((item, index) => {
+        // Trata com segurança os autores (evita erro de .join em tipos não-array)
+        let autoresTexto = "Autor desconhecido";
+        if (Array.isArray(item.authors)) {
+            autoresTexto = item.authors.length > 0 ? item.authors.join(", ") : "Autor desconhecido";
+        } else if (typeof item.authors === "string" && item.authors.trim() !== "") {
+            autoresTexto = item.authors;
+        }
+
+        const tituloEscapado = (item.title || "").replace(/'/g, "\\'");
+
+        const capaResultHTML = item.cover
+            ? `<img src="${item.cover}" class="autofill-result-img" onerror="this.outerHTML=window.gerarCapaPlaceholder('${tituloEscapado}')">`
+            : window.gerarCapaPlaceholder(item.title);
+
         html += `
             <div class="autofill-result-item">
-                <img src="${item.cover || 'https://via.placeholder.com/40x60?text=Sem+Capa'}" class="autofill-result-img" alt="Capa">
+                ${capaResultHTML}
                 <div class="autofill-result-info">
                     <span class="autofill-result-title">${item.title}</span>
-                    <span class="autofill-result-details">${item.authors ? item.authors.join(', ') : 'Autor desconhecido'}</span>
-                    <span style="font-size: 10px; color: #666; display:block;">ISBN: ${item.isbn || 'Não encontrado'}</span>
+                    <span class="autofill-result-details">${autoresTexto}</span>
+                    <span style="font-size: 11px; color: var(--muted-foreground); display:block; margin-top:2px;">ISBN: <strong>${item.isbn || 'Não informado'}</strong></span>
                 </div>
                 <button type="button" class="autofill-select-btn" onclick="selecionarOpcaoHibrida(${index})">Selecionar</button>
             </div>
         `;
     });
+
     if (resultsContainer) resultsContainer.innerHTML = html;
-    if (statusMsg) statusMsg.textContent = "Selecione:";
+    if (statusMsg) statusMsg.textContent = "Selecione um resultado:";
+    if (typeof lucide !== "undefined") lucide.createIcons();
 }
 
 window.selecionarOpcaoHibrida = function(index) {
     const item = window.resultadosCatalogoTemporarios[index];
+    if (!item) return;
+
+    let autoresTexto = "";
+    if (Array.isArray(item.authors)) {
+        autoresTexto = item.authors.join(", ");
+    } else if (typeof item.authors === "string") {
+        autoresTexto = item.authors;
+    }
+
     document.getElementById("input-livro-titulo").value = item.title || '';
-    document.getElementById("input-livro-autor").value = item.authors ? item.authors.join(', ') : '';
+    document.getElementById("input-livro-autor").value = autoresTexto;
     document.getElementById("input-livro-ano").value = item.year || '';
     document.getElementById("input-livro-editora").value = item.publisher || '';
     document.getElementById("input-livro-isbn").value = item.isbn || '';
     document.getElementById("input-livro-capa").value = item.cover || '';
     
     if (resultsContainer) resultsContainer.innerHTML = "";
-    if (statusMsg) statusMsg.textContent = "✓ Preenchido!";
+    if (statusMsg) statusMsg.textContent = "✓ Dados preenchidos com sucesso!";
+};
+
+window.gerarCapaPlaceholder = function(titulo) {
+    const tituloLimpo = titulo || "Sem Título";
+    const inicial = tituloLimpo.trim().charAt(0).toUpperCase() || "B";
+
+    return `
+        <div class="table-cover-placeholder" title="${tituloLimpo}">
+            <i data-lucide="book-open" class="icon-placeholder"></i>
+            <span class="cover-initial">${inicial}</span>
+        </div>
+    `;
 };
 
 // ==========================================================================
-// 3. TELA: EMPRÉSTIMOS (AUTO-PREENCHIMENTO, RENOVAÇÃO E STATUS CORRIGIDO)
+// 3. TELA: EMPRÉSTIMOS
 // ==========================================================================
-
-// Preenche a data de hoje e +7 dias automaticamente ao abrir/carregar os campos
 function inicializarDatasEmprestimo() {
     const inputRetirada = document.getElementById("input-emprestimo-retirada");
     const inputDevolucao = document.getElementById("input-emprestimo-devolucao");
@@ -506,40 +730,55 @@ function inicializarDatasEmprestimo() {
         const devolucaoPadrao = new Date();
         devolucaoPadrao.setDate(hoje.getDate() + 7);
 
-        // Preenche apenas se estiverem vazios
-        if (!inputRetirada.value) {
-            inputRetirada.value = hoje.toLocaleDateString('pt-BR');
-        }
-        if (!inputDevolucao.value) {
-            inputDevolucao.value = devolucaoPadrao.toLocaleDateString('pt-BR');
-        }
+        if (!inputRetirada.value) inputRetirada.value = hoje.toLocaleDateString('pt-BR');
+        if (!inputDevolucao.value) inputDevolucao.value = devolucaoPadrao.toLocaleDateString('pt-BR');
     }
 }
 
 async function carregarSelectsEmprestimo() {
-    const selectLeitor = document.getElementById("select-emprestimo-leitor");
-    const selectLivro = document.getElementById("select-emprestimo-livro");
+    const inputLeitor = document.getElementById("select-emprestimo-leitor");
+    const datalistLeitores = document.getElementById("list-leitores-autocomplete");
     
-    inicializarDatasEmprestimo(); // Dispara o auto-preenchimento das datas
+    const inputLivro = document.getElementById("select-emprestimo-livro");
+    const datalistLivros = document.getElementById("list-livros-autocomplete");
 
-    if (!selectLeitor || !selectLivro) return;
+    inicializarDatasEmprestimo();
+
+    if (!datalistLeitores || !datalistLivros) return;
 
     try {
+        // 1. CARREGA APENAS LEITORES ATIVOS
         const usersSnap = await getDocs(collection(db, "usuarios"));
-        selectLeitor.innerHTML = '<option value="">Selecionar leitor...</option>';
+        datalistLeitores.innerHTML = "";
+        
         usersSnap.forEach(docSnap => {
-            selectLeitor.innerHTML += `<option value="${docSnap.data().nome}">${docSnap.data().nome}</option>`;
+            const user = docSnap.data();
+            const status = (user.status || "Ativo").toLowerCase();
+            const cargo = (user.tipoUser || "leitor").toLowerCase();
+
+            // Filtra: exibe apenas usuários que NÃO estão inativos/excluídos e que são leitores
+            if (status === "ativo" && cargo === "leitor") {
+                datalistLeitores.innerHTML += `<option value="${user.nome}">`;
+            }
         });
 
+        // 2. CARREGA LIVROS DO ACERVO
         const booksSnap = await getDocs(collection(db, "books"));
-        selectLivro.innerHTML = '<option value="">Selecionar livro...</option>';
+        datalistLivros.innerHTML = "";
+
         booksSnap.forEach(docSnap => {
-            selectLivro.innerHTML += `<option value="${docSnap.data().titulo}">${docSnap.data().titulo}</option>`;
+            const livro = docSnap.data();
+            if (livro.titulo) {
+                datalistLivros.innerHTML += `<option value="${livro.titulo}">`;
+            }
         });
+
     } catch (error) { 
-        console.error("Erro ao carregar leitores/livros:", error); 
+        console.error("Erro ao carregar leitores/livros para o autocompletar:", error); 
     }
 }
+
+let emprestimosAdminCache = [];
 
 async function listarEmprestimosBanco() {
     const tbody = document.querySelector("#tela-emprestimos .admin-table tbody");
@@ -548,7 +787,7 @@ async function listarEmprestimosBanco() {
 
     try {
         const querySnapshot = await getDocs(collection(db, "emprestimos"));
-        tbody.innerHTML = "";
+        emprestimosAdminCache = [];
 
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0);
@@ -557,11 +796,28 @@ async function listarEmprestimosBanco() {
             const emp = docSnap.data();
             if (emp.status === "Devolvido") return;
 
+            const leitorExibicao = emp.Usuario_idUsuario || "Desconhecido";
+            const livroExibicao = emp.Exemplar_idExemplar || "Livro Não Informado";
+            const idDoc = docSnap.id;
+
+            if (emp.status === "Solicitado") {
+                emprestimosAdminCache.push({
+                    id: idDoc,
+                    leitor: leitorExibicao,
+                    livro: livroExibicao,
+                    dataRetirada: emp.data_solicitacao || "Hoje",
+                    dataDevolucao: "Aguardando retirada",
+                    status: "Solicitado",
+                    statusTag: "warning",
+                    tipoSolicitado: true
+                });
+                return;
+            }
+
             let dataDevPrevista = tratarData(emp.data_devolucao_prevista);
             let dataDevCompara = new Date(dataDevPrevista);
             dataDevCompara.setHours(0, 0, 0, 0);
 
-            // CORREÇÃO DO STATUS DE ATRASO EM TEMPO REAL
             let statusAtual = emp.status;
             if (hoje > dataDevCompara) {
                 statusAtual = "Atrasado";
@@ -575,42 +831,183 @@ async function listarEmprestimosBanco() {
 
             let dataDevolucaoFormatada = dataDevPrevista.toLocaleDateString('pt-BR');
 
-            const leitorExibicao = emp.Usuario_idUsuario || "Desconhecido";
-            const livroExibicao = emp.Exemplar_idExemplar || "Livro Não Informado";
-
-            // Botão de renovação (bloqueado se estiver atrasado)
-            let botaoRenovarHTML = statusAtual === "Atrasado" 
-                ? `<button class="action-icon" style="opacity: 0.4; cursor: not-allowed;" title="Bloqueado para renovação (Atrasado)"><i data-lucide="refresh-cw" class="icon-small"></i></button>`
-                : `<button class="action-icon" onclick="renovarEmprestimoAdmin('${docSnap.id}')" title="Renovar +7 dias"><i data-lucide="refresh-cw" class="icon-small"></i></button>`;
-
-            const linha = `
-                <tr>
-                    <td><strong>${leitorExibicao}</strong></td>
-                    <td>${livroExibicao}</td>
-                    <td>${dataRetiradaFormatada}</td>
-                    <td>${dataDevolucaoFormatada}</td>
-                    <td>
-                        <span class="status-tag ${statusTag}">
-                            ${statusAtual || "Em andamento"}
-                        </span>
-                    </td>
-                    <td>
-                        ${botaoRenovarHTML}
-                        <button class="action-icon btn-action-danger" onclick="deletarDocumento('emprestimos', '${docSnap.id}')" title="Excluir"><i data-lucide="trash-2" class="icon-small"></i></button>
-                    </td>
-                </tr>
-            `;
-            tbody.insertAdjacentHTML("beforeend", linha);
+            emprestimosAdminCache.push({
+                id: idDoc,
+                leitor: leitorExibicao,
+                livro: livroExibicao,
+                dataRetirada: dataRetiradaFormatada,
+                dataDevolucao: dataDevolucaoFormatada,
+                status: statusAtual || "Em andamento",
+                statusTag: statusTag,
+                tipoSolicitado: false
+            });
         });
 
-        if (typeof lucide !== "undefined") lucide.createIcons();
+        renderizarTabelaEmprestimosAdmin();
+
     } catch (error) { 
         console.error("Erro ao listar empréstimos:", error); 
     }
 }
 
-// AÇÃO DE RENOVAÇÃO DIRETA PELO ADMIN (+7 DIAS)
+function renderizarTabelaEmprestimosAdmin() {
+    const tbody = document.querySelector("#tela-emprestimos .admin-table tbody");
+    if (!tbody) return;
+
+    const inputBusca = document.querySelector("#tela-emprestimos .search-input")?.value.toLowerCase().trim() || "";
+    const filtroStatus = document.querySelector("#tela-emprestimos .select-filter")?.value || "";
+
+    const filtrados = emprestimosAdminCache.filter(item => {
+        const bateTexto = item.leitor.toLowerCase().includes(inputBusca) || 
+                          item.livro.toLowerCase().includes(inputBusca);
+
+        let bateStatus = true;
+        if (filtroStatus) {
+            bateStatus = item.status.toLowerCase() === filtroStatus.toLowerCase();
+        }
+
+        return bateTexto && bateStatus;
+    });
+
+    tbody.innerHTML = "";
+
+    if (filtrados.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--muted-foreground);">Nenhum empréstimo encontrado com esses filtros.</td></tr>`;
+        return;
+    }
+
+    filtrados.forEach(item => {
+        if (item.tipoSolicitado) {
+            const linhaSolicitado = `
+                <tr style="background-color: rgba(234, 179, 8, 0.05);">
+                    <td><strong>${item.leitor}</strong></td>
+                    <td>${item.livro}</td>
+                    <td>${item.dataRetirada}</td>
+                    <td>${item.dataDevolucao}</td>
+                    <td><span class="status-tag warning">Solicitado</span></td>
+                    <td>
+                        <button class="btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="confirmarEntregaFisica('${item.id}')" title="Confirmar entrega presencial">
+                            Efetivar Entrega
+                        </button>
+                        <button class="action-icon btn-action-danger" onclick="deletarDocumento('emprestimos', '${item.id}')" title="Cancelar Solicitação">
+                            <i data-lucide="trash-2" class="icon-small"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tbody.insertAdjacentHTML("beforeend", linhaSolicitado);
+        } else {
+            let botaoRenovarHTML = item.status === "Atrasado" 
+                ? `<button class="action-icon" style="opacity: 0.4; cursor: not-allowed;" title="Bloqueado para renovação (Atrasado)"><i data-lucide="refresh-cw" class="icon-small"></i></button>`
+                : `<button class="action-icon" onclick="renovarEmprestimoAdmin('${item.id}')" title="Renovar +7 dias"><i data-lucide="refresh-cw" class="icon-small"></i></button>`;
+
+            const linha = `
+                <tr>
+                    <td><strong>${item.leitor}</strong></td>
+                    <td>${item.livro}</td>
+                    <td>${item.dataRetirada}</td>
+                    <td>${item.dataDevolucao}</td>
+                    <td><span class="status-tag ${item.statusTag}">${item.status}</span></td>
+                    <td>
+                        ${botaoRenovarHTML}
+                        <button class="action-icon btn-action-danger" onclick="deletarDocumento('emprestimos', '${item.id}')" title="Excluir"><i data-lucide="trash-2" class="icon-small"></i></button>
+                    </td>
+                </tr>
+            `;
+            tbody.insertAdjacentHTML("beforeend", linha);
+        }
+    });
+
+    if (typeof lucide !== "undefined") lucide.createIcons();
+}
+
+window.confirmarEntregaFisica = async function(idEmprestimo) {
+    try {
+        const docRef = doc(db, "emprestimos", idEmprestimo);
+        const docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) {
+            return mostrarNotificacao("Solicitação de empréstimo não encontrada.", "error");
+        }
+
+        const emp = docSnap.data();
+        const livro = emp.Exemplar_idExemplar;
+
+        // 1. CHECAGEM DE DISPONIBILIDADE REAL NO BANCO
+        const queryLivros = await getDocs(collection(db, "books"));
+        const queryEmprestimos = await getDocs(collection(db, "emprestimos"));
+
+        let estoqueTotal = 0;
+        let encontrouLivro = false;
+
+        queryLivros.forEach((docSnap) => {
+            const l = docSnap.data();
+            if (l.titulo && l.titulo.trim().toLowerCase() === livro.trim().toLowerCase()) {
+                estoqueTotal = parseInt(l.quantidade) || 1;
+                encontrouLivro = true;
+            }
+        });
+
+        if (!encontrouLivro) {
+            return mostrarNotificacao(`O livro "${livro}" não existe no acervo.`, "error");
+        }
+
+        let exemplaresEmprestados = 0;
+        queryEmprestimos.forEach((d) => {
+            const e = d.data();
+            // Conta apenas empréstimos já ativos/em andamento (ignora o próprio registro se ele ainda estiver como Solicitado)
+            if (
+                d.id !== idEmprestimo &&
+                e.Exemplar_idExemplar && 
+                e.Exemplar_idExemplar.trim().toLowerCase() === livro.trim().toLowerCase() && 
+                e.status !== "Devolvido" && 
+                e.status !== "Solicitado"
+            ) {
+                exemplaresEmprestados++;
+            }
+        });
+
+        if (exemplaresEmprestados >= estoqueTotal) {
+            return mostrarNotificacao(
+                `Não é possível efetivar o empréstimo! Todos os ${estoqueTotal} exemplar(es) de "${livro}" já estão em uso.`, 
+                "warning"
+            );
+        }
+
+        // 2. CONFIRMA A ENTREGA
+        const confirmou = await confirmarAcao(
+            "Confirmar Entrega Física?",
+            `O leitor está no balcão e retirou "${livro}"? O prazo de 7 dias começará a contar a partir de hoje.`,
+            "Sim, confirmar entrega"
+        );
+
+        if (!confirmou) return;
+
+        const hoje = new Date();
+        const dataDevolucao = new Date();
+        dataDevolucao.setDate(hoje.getDate() + 7);
+
+        await updateDoc(docRef, {
+            data_retirada: hoje.toLocaleDateString('pt-BR'),
+            data_devolucao_prevista: dataDevolucao.toLocaleDateString('pt-BR'),
+            status: "Em andamento"
+        });
+
+        mostrarNotificacao("Entrega confirmada com sucesso! Empréstimo ativo.", "success");
+        listarEmprestimosBanco();
+        carregarMétricasDashboard();
+
+    } catch (error) {
+        console.error("Erro ao efetivar entrega física:", error);
+        mostrarNotificacao("Erro ao validar e efetivar o empréstimo.", "error");
+    }
+};
+
+let processandoRenovacao = false; // Trava global anti-duplo clique
+
 window.renovarEmprestimoAdmin = async function(idEmprestimo) {
+    if (processandoRenovacao) return; // Impede chamadas simultâneas
+
     const confirmou = await confirmarAcao(
         "Renovar Empréstimo?",
         "Deseja estender o prazo de devolução por mais 7 dias a partir do prazo atual?",
@@ -620,10 +1017,15 @@ window.renovarEmprestimoAdmin = async function(idEmprestimo) {
     if (!confirmou) return;
 
     try {
+        processandoRenovacao = true;
+
         const docRef = doc(db, "emprestimos", idEmprestimo);
         const docSnap = await getDoc(docRef);
 
-        if (!docSnap.exists()) return mostrarNotificacao("Empréstimo não encontrado.", "error");
+        if (!docSnap.exists()) {
+            processandoRenovacao = false;
+            return mostrarNotificacao("Empréstimo não encontrado.", "error");
+        }
 
         const emp = docSnap.data();
         let dataAtualPrevista = tratarData(emp.data_devolucao_prevista);
@@ -631,24 +1033,28 @@ window.renovarEmprestimoAdmin = async function(idEmprestimo) {
         // Adiciona +7 dias à data prevista existente
         dataAtualPrevista.setDate(dataAtualPrevista.getDate() + 7);
 
+        // ATENÇÃO: Usa estritamente updateDoc no mesmo ID existente
         await updateDoc(docRef, {
             data_devolucao_prevista: dataAtualPrevista.toLocaleDateString('pt-BR'),
             status: "Em andamento"
         });
 
         mostrarNotificacao("Empréstimo renovado por mais 7 dias!", "success");
-        listarEmprestimosBanco();
-        carregarMétricasDashboard();
+        
+        // Recarrega as tabelas para refletir no admin
+        await listarEmprestimosBanco();
+        await listarEmprestimosParaDevolucao();
+        await carregarMétricasDashboard();
 
     } catch (error) {
         console.error("Erro ao renovar empréstimo pelo admin:", error);
         mostrarNotificacao("Erro ao processar renovação.", "error");
+    } finally {
+        processandoRenovacao = false; // Libera a trava
     }
 };
 
-// SALVAR NOVO EMPRÉSTIMO COM TRAVA MÍNIMA DE 7 DIAS
 const btnConfirmarEmprestimo = document.getElementById("btn-confirmar-emprestimo");
-
 if (btnConfirmarEmprestimo) {
     btnConfirmarEmprestimo.addEventListener("click", async () => {
         const leitor = document.getElementById("select-emprestimo-leitor")?.value;
@@ -663,12 +1069,10 @@ if (btnConfirmarEmprestimo) {
         const dRetirada = tratarData(retiradaStr);
         const dDevolucao = tratarData(devolucaoStr);
 
-        // Calcula a diferença em dias entre devolução e retirada
         dRetirada.setHours(0, 0, 0, 0);
         dDevolucao.setHours(0, 0, 0, 0);
         const diffDias = Math.round((dDevolucao.getTime() - dRetirada.getTime()) / (1000 * 60 * 60 * 24));
 
-        // TRAVA: Impossibilita escolher prazo menor que 7 dias
         if (diffDias < 7) {
             return mostrarNotificacao("A data de devolução deve ter no mínimo 7 dias a partir da data de retirada!", "warning");
         }
@@ -677,7 +1081,6 @@ if (btnConfirmarEmprestimo) {
             const queryEmprestimos = await getDocs(collection(db, "emprestimos"));
             const queryLivros = await getDocs(collection(db, "books"));
 
-            // 1. TRAVA DE LIMITE (MÁX 3 POR LEITOR)
             let emprestimosAtivosLeitor = 0;
             queryEmprestimos.forEach((docSnap) => {
                 const emp = docSnap.data();
@@ -690,7 +1093,6 @@ if (btnConfirmarEmprestimo) {
                 return mostrarNotificacao(`Empréstimo recusado! O leitor ${leitor} já possui 3 empréstimos ativos.`, "warning");
             }
 
-            // 2. TRAVA DE ESTOQUE DISPONÍVEL
             let estoqueTotal = 1;
             queryLivros.forEach((docSnap) => {
                 const l = docSnap.data();
@@ -711,7 +1113,6 @@ if (btnConfirmarEmprestimo) {
                 return mostrarNotificacao(`Empréstimo recusado! Todos os ${estoqueTotal} exemplar(es) de "${livro}" já estão emprestados.`, "warning");
             }
 
-            // REGISTRO NO FIREBASE
             await addDoc(collection(db, "emprestimos"), {
                 Usuario_idUsuario: leitor,
                 Exemplar_idExemplar: livro,
@@ -734,18 +1135,21 @@ if (btnConfirmarEmprestimo) {
 }
 
 // ==========================================================================
-// 4. TELA: DEVOLUÇÕES (COM VISUALIZAÇÃO DE MULTA ATIVA DINÂMICA)
+// 4. TELA: DEVOLUÇÕES
 // ==========================================================================
+let devolucoesAdminCache = [];
+
 async function listarEmprestimosParaDevolucao() {
     const tbody = document.querySelector("#tela-devolucoes .admin-table tbody");
     if (!tbody) return;
-    tbody.innerHTML = "<tr><td colspan='6'>Carregando fluxo de devoluções...</td></tr>";
+    
+    // 1. LIMPA A TABELA E O CACHE ANTES DE BUSCAR
+    devolucoesAdminCache = [];
+    tbody.innerHTML = "<tr><td colspan='6' style='text-align: center;'>Carregando fluxo de devoluções...</td></tr>";
 
     try {
         const querySnapshot = await getDocs(collection(db, "emprestimos"));
-        tbody.innerHTML = "";
 
-        // Busca o valor atualizado da multa por dia configurado no banco
         let valorMultaDiaria = 1.50; 
         const queryConfig = await getDocs(collection(db, "configuracao"));
         if (!queryConfig.empty) {
@@ -758,6 +1162,10 @@ async function listarEmprestimosParaDevolucao() {
 
         querySnapshot.forEach((docSnap) => {
             const emp = docSnap.data();
+            const idDoc = docSnap.id;
+
+            // EVITA ADICIONAR O MESMO ID DUAS VEZES CASO O QUERY SNAPSHOT TRAGA ALGO REPETIDO
+            if (devolucoesAdminCache.some(item => item.id === idDoc)) return;
             
             let dataRetiradaFormatada = emp.data_retirada && typeof emp.data_retirada.toDate === "function" 
                 ? emp.data_retirada.toDate().toLocaleDateString('pt-BR') 
@@ -774,9 +1182,10 @@ async function listarEmprestimosParaDevolucao() {
 
             let acaoHTML = "";
             let multaHTML = `<span class="status-tag success">Nenhuma</span>`;
+            let estaDevolvido = false;
 
-            // SE O LIVRO JÁ FOI DEVOLVIDO
             if (emp.status === "Devolvido") {
+                estaDevolvido = true;
                 let dataReal = emp.data_devolucao_real && typeof emp.data_devolucao_real.toDate === "function" 
                     ? emp.data_devolucao_real.toDate().toLocaleDateString('pt-BR') 
                     : "Concluído";
@@ -788,12 +1197,9 @@ async function listarEmprestimosParaDevolucao() {
                 if (dReal > dPrev) {
                     multaHTML = `<span class="status-tag success">Paga</span>`;
                 }
-            } 
-            // SE O EMPRÉSTIMO AINDA ESTÁ ATIVO
-            else {
-                acaoHTML = `<button class="btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="confirmarDevolucaoBanco('${docSnap.id}')">Confirmar Devolução</button>`;
+            } else {
+                acaoHTML = `<button class="btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="confirmarDevolucaoBanco('${idDoc}')">Confirmar Devolução</button>`;
                 
-                // VERIFICAÇÃO DE ATRASO EM TEMPO REAL
                 if (hoje > dataDevCompara || emp.status === "Atrasado") {
                     const diferencaTempo = hoje.getTime() - dataDevCompara.getTime();
                     const diasAtraso = Math.max(1, Math.ceil(diferencaTempo / (1000 * 60 * 60 * 24)));
@@ -803,24 +1209,70 @@ async function listarEmprestimosParaDevolucao() {
                 }
             }
 
-            const linha = `
-                <tr>
-                    <td><strong>${leitorExibicao}</strong></td>
-                    <td>${livroExibicao}</td>
-                    <td>${dataRetiradaFormatada}</td>
-                    <td>${dataDevolucaoFormatada}</td>
-                    <td>${multaHTML}</td>
-                    <td style="text-align: right;">${acaoHTML}</td>
-                </tr>
-            `;
-            tbody.insertAdjacentHTML("beforeend", linha);
+            devolucoesAdminCache.push({
+                id: idDoc,
+                leitor: leitorExibicao,
+                livro: livroExibicao,
+                dataRetirada: dataRetiradaFormatada,
+                dataDevolucao: dataDevolucaoFormatada,
+                multaHTML,
+                acaoHTML,
+                estaDevolvido
+            });
         });
 
-        if (typeof lucide !== "undefined") lucide.createIcons();
+        // 2. RENDERIZA APENAS UMA VEZ
+        renderizarTabelaDevolucoesAdmin();
 
     } catch (error) { 
         console.error("Erro ao carregar tabela de devoluções:", error); 
     }
+}
+
+function renderizarTabelaDevolucoesAdmin() {
+    const tbody = document.querySelector("#tela-devolucoes .admin-table tbody");
+    if (!tbody) return;
+
+    const inputBusca = document.querySelector("#tela-devolucoes .search-input")?.value.toLowerCase().trim() || "";
+    const filtroStatus = document.querySelector("#tela-devolucoes .select-filter")?.value || "";
+
+    const filtrados = devolucoesAdminCache.filter(item => {
+        const bateTexto = item.leitor.toLowerCase().includes(inputBusca) || 
+                          item.livro.toLowerCase().includes(inputBusca);
+
+        let bateFiltro = true;
+        if (filtroStatus === "pendentes") {
+            bateFiltro = !item.estaDevolvido;
+        } else if (filtroStatus === "concluidos") {
+            bateFiltro = item.estaDevolvido;
+        }
+
+        return bateTexto && bateFiltro;
+    });
+
+    // LIMPA A TABELA ANTES DE INSERIR AS LINHAS
+    tbody.innerHTML = "";
+
+    if (filtrados.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--muted-foreground);">Nenhum registro encontrado.</td></tr>`;
+        return;
+    }
+
+    filtrados.forEach(item => {
+        const linha = `
+            <tr>
+                <td><strong>${item.leitor}</strong></td>
+                <td>${item.livro}</td>
+                <td>${item.dataRetirada}</td>
+                <td>${item.dataDevolucao}</td>
+                <td>${item.multaHTML}</td>
+                <td style="text-align: right;">${item.acaoHTML}</td>
+            </tr>
+        `;
+        tbody.insertAdjacentHTML("beforeend", linha);
+    });
+
+    if (typeof lucide !== "undefined") lucide.createIcons();
 }
 
 window.confirmarDevolucaoBanco = async function(id) {
@@ -850,7 +1302,6 @@ window.confirmarDevolucaoBanco = async function(id) {
 // ==========================================================================
 // 5. TELA: CONFIGURAÇÕES
 // ==========================================================================
-
 let idConfigDoc = null;
 
 async function carregarConfiguracoesBanco() {
@@ -862,11 +1313,17 @@ async function carregarConfiguracoesBanco() {
         idConfigDoc = configDoc.id;
         const config = configDoc.data();
 
-        document.getElementById("config-nome-biblioteca").value = config.nome_biblioteca || "";
-        document.getElementById("config-prazo-emprestimo").value = config.prazo_emprestimo_dias || "";
-        document.getElementById("config-valor-multa").value = config.valor_multa_diaria || "";
-        document.getElementById("config-limite-user").value = config.limite_emprestimos_usuario || "";
-        document.getElementById("config-max-renovacao").value = config.prazo_maximo_renovacao_dias || "";
+        const elNome = document.getElementById("config-nome-biblioteca");
+        const elPrazo = document.getElementById("config-prazo-emprestimo");
+        const elMulta = document.getElementById("config-valor-multa");
+        const elLimite = document.getElementById("config-limite-user");
+        const elMaxRenov = document.getElementById("config-max-renovacao");
+
+        if (elNome) elNome.value = config.nome_biblioteca || "";
+        if (elPrazo) elPrazo.value = config.prazo_emprestimo_dias || "";
+        if (elMulta) elMulta.value = config.valor_multa_diaria || "";
+        if (elLimite) elLimite.value = config.limite_emprestimos_usuario || "";
+        if (elMaxRenov) elMaxRenov.value = config.prazo_maximo_renovacao_dias || "";
     } catch (error) { console.error(error); }
 }
 
@@ -876,13 +1333,13 @@ if (btnSalvarConfig) {
         if (!idConfigDoc) return mostrarNotificacao("Nenhum documento de configuração localizado.", "warning");
         try {
             await updateDoc(doc(db, "configuracao", idConfigDoc), {
-                nome_biblioteca: document.getElementById("config-nome-biblioteca").value,
-                prazo_emprestimo_dias: parseInt(document.getElementById("config-prazo-emprestimo").value) || 0,
-                valor_multa_diaria: parseFloat(document.getElementById("config-valor-multa").value) || 0,
-                limite_emprestimos_usuario: parseInt(document.getElementById("config-limite-user").value) || 0,
-                prazo_maximo_renovacao_dias: parseInt(document.getElementById("config-max-renovacao").value) || 0
+                nome_biblioteca: document.getElementById("config-nome-biblioteca")?.value || "",
+                prazo_emprestimo_dias: parseInt(document.getElementById("config-prazo-emprestimo")?.value) || 0,
+                valor_multa_diaria: parseFloat(document.getElementById("config-valor-multa")?.value) || 0,
+                limite_emprestimos_usuario: parseInt(document.getElementById("config-limite-user")?.value) || 0,
+                prazo_maximo_renovacao_dias: parseInt(document.getElementById("config-max-renovacao")?.value) || 0
             });
-            mostrarNotificacao("Configurações atualizadas!", "sucess");
+            mostrarNotificacao("Configurações atualizadas!", "success");
             carregarMétricasDashboard();
         } catch (error) { console.error(error); }
     });
@@ -891,6 +1348,8 @@ if (btnSalvarConfig) {
 // ==========================================================================
 // 6. TELA: RESERVAS
 // ==========================================================================
+let reservasAdminCache = [];
+
 async function listarReservasBanco() {
     const tbody = document.querySelector("#tela-reservas .admin-table tbody");
     if (!tbody) return;
@@ -898,11 +1357,10 @@ async function listarReservasBanco() {
 
     try {
         const querySnapshot = await getDocs(collection(db, "reservas"));
-        tbody.innerHTML = "";
+        reservasAdminCache = [];
 
         querySnapshot.forEach((docSnap) => {
             const res = docSnap.data();
-            // Exibe apenas reservas ativas/pendentes
             if (res.status === "Cancelada" || res.status === "Atendida" || res.status === "Concluída") return;
 
             const isDisponivel = res.status === "Disponível para retirada";
@@ -916,7 +1374,6 @@ async function listarReservasBanco() {
             const leitorExibicao = res.Usuario_idUsuario || "Desconhecido";
             const livroExibicao = res.Livro_idLivro || "Livro Não Informado";
 
-            // Se ainda está aguardando, o botão NOTIFICA o leitor. Se já foi notificado, o botão apenas indica o estado.
             let acaoNotificarHTML = "";
             if (!isDisponivel) {
                 acaoNotificarHTML = `
@@ -932,56 +1389,137 @@ async function listarReservasBanco() {
                 `;
             }
 
-            const linha = `
-                <tr>
-                    <td><strong>${leitorExibicao}</strong></td>
-                    <td>${livroExibicao}</td>
-                    <td>${dataReservaFormatada}</td>
-                    <td><span class="status-tag ${statusTag}">${statusTexto}</span></td>
-                    <td>
-                        ${acaoNotificarHTML}
-                        <button class="action-icon btn-action-danger" onclick="cancelarReservaBanco('${docSnap.id}')" title="Cancelar Reserva">
-                            <i data-lucide="trash-2" class="icon-small"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-            tbody.insertAdjacentHTML("beforeend", linha);
+            reservasAdminCache.push({
+                id: docSnap.id,
+                leitor: leitorExibicao,
+                livro: livroExibicao,
+                dataReserva: dataReservaFormatada,
+                statusTag,
+                statusTexto,
+                acaoNotificarHTML
+            });
         });
 
-        if (typeof lucide !== "undefined") lucide.createIcons();
+        renderizarTabelaReservasAdmin();
 
     } catch (error) { 
         console.error("Erro ao listar reservas:", error); 
     }
 }
 
-// MUDANÇA DE STATUS PARA DISPONÍVEL + DISPARO DE ALERTA PARA O LEITOR
+function renderizarTabelaReservasAdmin() {
+    const tbody = document.querySelector("#tela-reservas .admin-table tbody");
+    if (!tbody) return;
+
+    const inputBusca = document.querySelector("#tela-reservas .search-input")?.value.toLowerCase().trim() || "";
+    const filtroStatus = document.querySelector("#tela-reservas .select-filter")?.value.toLowerCase().trim() || "";
+
+    const filtrados = reservasAdminCache.filter(item => {
+        const bateTexto = item.leitor.toLowerCase().includes(inputBusca) || item.livro.toLowerCase().includes(inputBusca);
+        
+        let bateStatus = true;
+        if (filtroStatus === "aguardando") {
+            bateStatus = item.statusTexto.toLowerCase().includes("aguardando");
+        } else if (filtroStatus === "disponivel") {
+            bateStatus = item.statusTexto.toLowerCase().includes("disponível");
+        }
+
+        return bateTexto && bateStatus;
+    });
+
+    tbody.innerHTML = "";
+
+    if (filtrados.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--muted-foreground);">Nenhuma reserva encontrada com esses filtros.</td></tr>`;
+        return;
+    }
+
+    filtrados.forEach(item => {
+        const linha = `
+            <tr>
+                <td><strong>${item.leitor}</strong></td>
+                <td>${item.livro}</td>
+                <td>${item.dataReserva}</td>
+                <td><span class="status-tag ${item.statusTag}">${item.statusTexto}</span></td>
+                <td>
+                    ${item.acaoNotificarHTML}
+                    <button class="action-icon btn-action-danger" onclick="cancelarReservaBanco('${item.id}')" title="Cancelar Reserva">
+                        <i data-lucide="trash-2" class="icon-small"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+        tbody.insertAdjacentHTML("beforeend", linha);
+    });
+
+    if (typeof lucide !== "undefined") lucide.createIcons();
+}
+
 window.notificarLivroDisponivel = async function(idReserva, leitor, livro) {
-    const confirmou = await confirmarAcao(
-        "Disponibilizar para Retirada?",
-        `Isso alterará o status da reserva de "${livro}" e enviará um alerta no painel do leitor (${leitor}).`,
-        "Sim, avisar leitor!"
-    );
-
-    if (!confirmou) return;
-
     try {
-        // 1. Atualiza o status no Firebase para que o leitor veja o aviso no painel dele
+        // 1. CHECAGEM DE DISPONIBILIDADE REAL NO BANCO
+        const queryLivros = await getDocs(collection(db, "books"));
+        const queryEmprestimos = await getDocs(collection(db, "emprestimos"));
+
+        let estoqueTotal = 0;
+        let encontrouLivro = false;
+
+        queryLivros.forEach((docSnap) => {
+            const l = docSnap.data();
+            if (l.titulo && l.titulo.trim().toLowerCase() === livro.trim().toLowerCase()) {
+                estoqueTotal = parseInt(l.quantidade) || 1;
+                encontrouLivro = true;
+            }
+        });
+
+        if (!encontrouLivro) {
+            return mostrarNotificacao(`O livro "${livro}" não foi encontrado no acervo!`, "error");
+        }
+
+        // Conta quantos exemplares estão atualmente emprestados (não devolvidos)
+        let exemplaresEmprestados = 0;
+        queryEmprestimos.forEach((docSnap) => {
+            const emp = docSnap.data();
+            if (
+                emp.Exemplar_idExemplar && 
+                emp.Exemplar_idExemplar.trim().toLowerCase() === livro.trim().toLowerCase() && 
+                emp.status !== "Devolvido"
+            ) {
+                exemplaresEmprestados++;
+            }
+        });
+
+        const disponiveis = estoqueTotal - exemplaresEmprestados;
+
+        // TRAVA: Se não houver exemplares livres no momento, impede a notificação
+        if (disponiveis <= 0) {
+            return mostrarNotificacao(
+                `Não é possível notificar! Todos os ${estoqueTotal} exemplar(es) de "${livro}" estão atualmente emprestados.`, 
+                "warning"
+            );
+        }
+
+        // 2. SE HOUVER ESTOQUE, CONFIRMA E NOTIFICA
+        const confirmou = await confirmarAcao(
+            "Disponibilizar para Retirada?", 
+            `Existe(m) ${disponiveis} exemplar(es) disponível(is). Deseja alterar o status e avisar o leitor ${leitor}?`, 
+            "Sim, avisar leitor!"
+        );
+
+        if (!confirmou) return;
+
         await updateDoc(doc(db, "reservas", idReserva), {
             status: "Disponível para retirada",
             dataDisponibilizado: new Date()
         });
 
-        mostrarNotificacao(`Notificação enviada! O livro "${livro}" agora está marcado para retirada.`, "success");
-        
-        // Recarrega a tabela e o dashboard
+        mostrarNotificacao(`Notificação enviada! O livro "${livro}" foi reservado para retirada de ${leitor}.`, "success");
         listarReservasBanco();
         carregarMétricasDashboard();
 
     } catch (error) {
-        console.error("Erro ao notificar leitor:", error);
-        mostrarNotificacao("Erro ao atualizar o status da reserva.", "error");
+        console.error("Erro ao verificar disponibilidade para notificação:", error);
+        mostrarNotificacao("Erro ao processar validação do estoque.", "error");
     }
 };
 
@@ -1004,9 +1542,8 @@ window.cancelarReservaBanco = async function(id) {
 };
 
 // ==========================================================================
-// 7. TELA: USUÁRIOS E SUBABA DE SOLICITAÇÕES - ATUALIZADO
+// 7. TELA: USUÁRIOS E SUBABA DE SOLICITAÇÕES
 // ==========================================================================
-
 async function listarUsuariosBanco() {
     const tbodyLeitores = document.getElementById("tbody-usuarios-ativos");
     const tbodyFuncionarios = document.getElementById("tbody-funcionarios-ativos");
@@ -1045,7 +1582,6 @@ async function listarUsuariosBanco() {
                 </tr>
             `;
 
-            // Separação de cargos pelas abas
             if (cargo === "bibliotecario" || cargo === "admin" || cargo === "administrador") {
                 if (tbodyFuncionarios) tbodyFuncionarios.insertAdjacentHTML("beforeend", linha);
                 qtdFuncionarios++;
@@ -1063,7 +1599,6 @@ async function listarUsuariosBanco() {
         }
 
         await listarSolicitacoesPendentesAdmin();
-
         if (typeof lucide !== "undefined") lucide.createIcons();
 
     } catch (error) { 
@@ -1071,7 +1606,6 @@ async function listarUsuariosBanco() {
     }
 }
 
-// RENDERIZA APENAS DENTRO DA SUBTELA DE SOLICITAÇÕES EXISTENTE
 async function listarSolicitacoesPendentesAdmin() {
     const tbodySolicitacoes = document.getElementById("tbody-solicitacoes-cadastro");
     const badgeQtd = document.getElementById("badge-qtd-solicitacoes");
@@ -1086,8 +1620,6 @@ async function listarSolicitacoesPendentesAdmin() {
 
         querySolicitacoes.forEach((docSnap) => {
             const req = docSnap.data();
-            
-            // Filtra exibindo apenas aquelas que estão aguardando decisão
             if (req.status !== "Pendente") return;
             totalPendentes++;
 
@@ -1109,10 +1641,7 @@ async function listarSolicitacoesPendentesAdmin() {
             tbodySolicitacoes.insertAdjacentHTML("beforeend", linha);
         });
 
-        // Atualiza dinamicamente o contador numérico da aba amarela
-        if (badgeQtd) {
-            badgeQtd.innerText = totalPendentes;
-        }
+        if (badgeQtd) badgeQtd.innerText = totalPendentes;
 
         if (totalPendentes === 0) {
             tbodySolicitacoes.innerHTML = "<tr><td colspan='6' style='text-align: center; color: var(--muted-foreground); padding: 20px 0;'>Nenhuma solicitação de cadastro pendente.</td></tr>";
@@ -1168,11 +1697,7 @@ window.decidirSolicitacao = async function(idSolicitacao, aprovado) {
     }
 };
 
-// ==========================================================================
-// CADASTRO DE USUÁRIO COM VALIDAÇÃO ANTI-DUPLICAÇÃO
-// ==========================================================================
 const btnConfirmarCadastroUser = document.getElementById("btn-confirmar-cadastro-user");
-
 if (btnConfirmarCadastroUser) {
     btnConfirmarCadastroUser.addEventListener("click", async (e) => {
         e.preventDefault();
@@ -1190,7 +1715,6 @@ if (btnConfirmarCadastroUser) {
         }
 
         try {
-            // VERIFICAÇÃO ANTI-DUPLICAÇÃO NO FIRESTORE
             const queryExistentes = await getDocs(collection(db, "usuarios"));
             let duplicado = false;
             let motivoDuplicado = "";
@@ -1214,11 +1738,8 @@ if (btnConfirmarCadastroUser) {
                 return;
             }
 
-            // SALVA NO BANCO CASO NÃO SEJA DUPLICADO
             await addDoc(collection(db, "usuarios"), {
-                nome,
-                cpf,
-                email,
+                nome, cpf, email,
                 telefone: telefone || "",
                 tipoUser: perfil || "leitor",
                 foto: foto || "",
@@ -1228,7 +1749,6 @@ if (btnConfirmarCadastroUser) {
 
             mostrarNotificacao(`Usuário ${nome} (${perfil}) cadastrado com sucesso!`, "success");
 
-            // Limpa o formulário
             document.getElementById("input-user-nome").value = "";
             document.getElementById("input-user-cpf").value = "";
             document.getElementById("input-user-email").value = "";
@@ -1239,7 +1759,6 @@ if (btnConfirmarCadastroUser) {
                 window.alternarFormUsuario(false);
             }
 
-            // Recarrega as tabelas separadas
             await listarUsuariosBanco();
 
         } catch (error) {
@@ -1250,7 +1769,7 @@ if (btnConfirmarCadastroUser) {
 }
 
 // ==========================================================================
-// 8. DROPDOWN DE NOTIFICAÇÕES (DADOS REAIS DO FIREBASE)
+// 8. DROPDOWN DE NOTIFICAÇÕES
 // ==========================================================================
 function formatarTempoRelativo(dataBanco) {
     const alvo = tratarData(dataBanco);
@@ -1259,10 +1778,8 @@ function formatarTempoRelativo(dataBanco) {
 
     if (diffMin < 1) return "agora";
     if (diffMin < 60) return `há ${diffMin} min`;
-
     const diffHoras = Math.floor(diffMin / 60);
     if (diffHoras < 24) return `há ${diffHoras}h`;
-
     const diffDias = Math.floor(diffHoras / 24);
     return `há ${diffDias} dia${diffDias > 1 ? "s" : ""}`;
 }
@@ -1275,7 +1792,6 @@ async function carregarNotificacoesBanco() {
     try {
         const notificacoes = [];
 
-        // 1. USUÁRIOS BLOQUEADOS (vermelho)
         const queryUsuarios = await getDocs(collection(db, "usuarios"));
         queryUsuarios.forEach((docSnap) => {
             const u = docSnap.data();
@@ -1288,7 +1804,6 @@ async function carregarNotificacoesBanco() {
             }
         });
 
-        // 2. RESERVAS DISPONÍVEIS PARA RETIRADA (verde)
         const queryReservas = await getDocs(collection(db, "reservas"));
         queryReservas.forEach((docSnap) => {
             const r = docSnap.data();
@@ -1302,7 +1817,6 @@ async function carregarNotificacoesBanco() {
             }
         });
 
-        // 3. NOVAS MULTAS PENDENTES (azul) - busca o empréstimo relacionado para saber o leitor
         const queryMultas = await getDocs(collection(db, "multas"));
         for (const docSnap of queryMultas.docs) {
             const m = docSnap.data();
@@ -1317,7 +1831,7 @@ async function carregarNotificacoesBanco() {
                         leitor = (emp.Usuario_idUsuario && emp.Usuario_idUsuario.length > 15) ? "Fernando Ribeiro" : (emp.Usuario_idUsuario || "Desconhecido");
                     }
                 }
-            } catch (e) { /* mantém "Desconhecido" em caso de falha na busca */ }
+            } catch (e) { }
 
             const valorFormatado = Number(m.valor_total || 0).toFixed(2).replace('.', ',');
             notificacoes.push({
@@ -1327,7 +1841,6 @@ async function carregarNotificacoesBanco() {
             });
         }
 
-        // 4. EMPRÉSTIMOS QUE VENCEM AMANHÃ (amarelo)
         const queryEmprestimos = await getDocs(collection(db, "emprestimos"));
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0);
@@ -1352,7 +1865,6 @@ async function carregarNotificacoesBanco() {
             }
         });
 
-        // Mais recentes primeiro
         notificacoes.sort((a, b) => tratarData(b.data) - tratarData(a.data));
 
         if (notificacoes.length === 0) {
@@ -1375,20 +1887,17 @@ async function carregarNotificacoesBanco() {
 
     } catch (error) {
         console.error("Erro ao carregar notificações:", error);
-        listaEl.innerHTML = '<p style="text-align: center; color: var(--muted-foreground); font-size: 13px; padding: 16px 0;">Não foi possível carregar as notificações.</p>';
     }
 }
 
-// Atualiza a lista sempre que o sino é clicado, garantindo dados sempre atuais
 document.addEventListener("click", (e) => {
     if (e.target.closest(".btn-notification")) {
         carregarNotificacoesBanco();
     }
 });
 
-
 // ==========================================================================
-// 9. PERFIL DO USUÁRIO LOGADO (CARREGAR DADOS / SALVAR / ALTERAR SENHA)
+// 9. PERFIL DO USUÁRIO LOGADO (RESTAURADO COMPLETAMENTE)
 // ==========================================================================
 let PERFIL_ATUAL_ID = null;
 let PERFIL_ATUAL_DADOS = null;
@@ -1421,7 +1930,6 @@ function preencherFormularioPerfil() {
     if (campoTelefone) campoTelefone.value = PERFIL_ATUAL_DADOS.telefone || "";
 }
 
-// Busca no Firestore os dados reais do usuário logado (por e-mail) e preenche cabeçalho, dropdown e modal
 async function carregarPerfilLogado() {
     const emailLogado = localStorage.getItem("usuario-logado-email");
     if (!emailLogado) return;
@@ -1460,7 +1968,6 @@ async function carregarPerfilLogado() {
     }
 }
 
-// Salva Nome / E-mail / Telefone (aba "Informações")
 async function salvarInformacoesPerfil() {
     if (!PERFIL_ATUAL_ID || !PERFIL_ATUAL_DADOS) {
         mostrarNotificacao("Não foi possível identificar seu usuário. Faça login novamente.", "error");
@@ -1482,7 +1989,6 @@ async function salvarInformacoesPerfil() {
     }
 
     try {
-        // Garante que o e-mail não pertence a outra conta já cadastrada
         if (email !== (PERFIL_ATUAL_DADOS.email || "").toLowerCase()) {
             const querySnapshot = await getDocs(collection(db, "usuarios"));
             let emailEmUso = false;
@@ -1510,7 +2016,6 @@ async function salvarInformacoesPerfil() {
         PERFIL_ATUAL_DADOS.email = email;
         PERFIL_ATUAL_DADOS.telefone = telefone;
 
-        // Mantém o localStorage sincronizado, já que login.html e o controle de acesso dependem dele
         localStorage.setItem("usuario-logado-nome", nome);
         localStorage.setItem("usuario-logado-email", email);
 
@@ -1527,7 +2032,6 @@ async function salvarInformacoesPerfil() {
         mostrarNotificacao("Perfil atualizado com sucesso!", "success");
         if (typeof window.fecharModalPerfil === "function") window.fecharModalPerfil();
 
-        // Reflete o nome/e-mail atualizado nas listagens que dependem disso
         if (typeof listarUsuariosBanco === "function") listarUsuariosBanco();
 
     } catch (error) {
@@ -1536,7 +2040,6 @@ async function salvarInformacoesPerfil() {
     }
 }
 
-// Salva a nova senha (aba "Alterar Senha"), validando a senha atual da mesma forma que o login faz
 async function salvarNovaSenhaPerfil() {
     if (!PERFIL_ATUAL_ID || !PERFIL_ATUAL_DADOS) {
         mostrarNotificacao("Não foi possível identificar seu usuário. Faça login novamente.", "error");
@@ -1556,7 +2059,6 @@ async function salvarNovaSenhaPerfil() {
         return;
     }
 
-    // A mesma regra de validação usada no login: senha própria se existir, senão CPF ou "123456"
     const senhaAtualValida = PERFIL_ATUAL_DADOS.senha
         ? PERFIL_ATUAL_DADOS.senha === atual
         : (PERFIL_ATUAL_DADOS.cpf === atual || atual === "123456");
@@ -1599,7 +2101,6 @@ async function salvarNovaSenhaPerfil() {
     }
 }
 
-// Decide qual aba está ativa no momento do clique em "Salvar" e chama a rotina certa
 async function salvarPerfilLogado() {
     const abaSenha = document.getElementById("subaba-perfil-senha");
     const abaSenhaAtiva = abaSenha && abaSenha.style.display !== "none";
@@ -1611,32 +2112,71 @@ async function salvarPerfilLogado() {
     }
 }
 
-// Sempre que o dropdown abrir o modal, repopula os campos com os dados mais recentes
 document.addEventListener("click", (e) => {
     if (e.target.closest(".dropdown-perfil-menu button")) {
         setTimeout(preencherFormularioPerfil, 50);
     }
 });
 
-document.addEventListener("DOMContentLoaded", () => {
-    carregarPerfilLogado();
+// ==========================================================================
+// CENTRALIZADOR DE NAVEGAÇÃO E EVENTOS DE INICIALIZAÇÃO
+// ==========================================================================
+document.addEventListener("click", (e) => {
+    const itemMenu = e.target.closest(".sidebar-item");
+    if (itemMenu) {
+        const idTela = itemMenu.getAttribute("data-tela");
+        setTimeout(() => {
+            if (idTela === "dashboard") carregarMétricasDashboard();
+            if (idTela === "acervo") listarAcervoBanco();
+            if (idTela === "emprestimos") { listarEmprestimosBanco(); carregarSelectsEmprestimo(); }
+            if (idTela === "devolucoes") listarEmprestimosParaDevolucao();
+            if (idTela === "configuracoes") carregarConfiguracoesBanco();
+            if (idTela === "usuarios") listarUsuariosBanco();
+            if (idTela === "reservas") listarReservasBanco();
+        }, 150);
+    }
+});
 
+document.addEventListener("DOMContentLoaded", () => {
+    // Carregamento inicial isolado para evitar falhas em cadeia
+    try { carregarMétricasDashboard(); } catch(e) {}
+    try { listarAcervoBanco(); } catch(e) {}
+    try { listarEmprestimosBanco(); } catch(e) {}
+    try { listarUsuariosBanco(); } catch(e) {}
+    try { listarEmprestimosParaDevolucao(); } catch(e) {}
+    try { listarReservasBanco(); } catch(e) {}
+    try { carregarNotificacoesBanco(); } catch(e) {}
+    try { carregarPerfilLogado(); } catch(e) {}
+
+    // Botão de salvar no modal do perfil
     const btnSalvarPerfil = document.getElementById("btn-modal-salvar-perfil");
     if (btnSalvarPerfil) {
         btnSalvarPerfil.addEventListener("click", salvarPerfilLogado);
     }
-});
 
-// ==========================================================================
-// INICIALIZAÇÃO AUTOMÁTICA GERAL EM BLOCOS ISOLADOS (ANTI-TRAVAMENTO)
-// ==========================================================================
-document.addEventListener("DOMContentLoaded", () => {
-    // Executa cada bloco em paralelo. Se um falhar, não quebra os outros.
-    try { carregarMétricasDashboard(); } catch(e) { console.error(e); }
-    try { listarAcervoBanco(); } catch(e) { console.error(e); }
-    try { listarEmprestimosBanco(); } catch(e) { console.error(e); }
-    try { listarUsuariosBanco(); } catch(e) { console.error(e); } // Força o carregamento inicial
-    try { listarEmprestimosParaDevolucao(); } catch(e) { console.error(e); }
-    try { listarReservasBanco(); } catch(e) { console.error(e); }
-    try { carregarNotificacoesBanco(); } catch(e) { console.error(e); }
+    // Ouvintes para o filtro da Tela de Acervo
+    const inputAcervo = document.querySelector("#tela-acervo .search-input");
+    const selectGenAcervo = document.getElementById("filtro-acervo-genero");
+    const selectStatusAcervo = document.querySelectorAll("#tela-acervo .select-filter")[1];
+    if (inputAcervo) inputAcervo.addEventListener("input", renderizarTabelaAcervoAdmin);
+    if (selectGenAcervo) selectGenAcervo.addEventListener("change", renderizarTabelaAcervoAdmin);
+    if (selectStatusAcervo) selectStatusAcervo.addEventListener("change", renderizarTabelaAcervoAdmin);
+
+    // Ouvintes para o filtro da Tela de Empréstimos
+    const inputEmp = document.querySelector("#tela-emprestimos .search-input");
+    const selectEmp = document.querySelector("#tela-emprestimos .select-filter");
+    if (inputEmp) inputEmp.addEventListener("input", renderizarTabelaEmprestimosAdmin);
+    if (selectEmp) selectEmp.addEventListener("change", renderizarTabelaEmprestimosAdmin);
+
+    // Ouvintes para o filtro da Tela de Devoluções
+    const inputDev = document.querySelector("#tela-devolucoes .search-input");
+    const selectDev = document.querySelector("#tela-devolucoes .select-filter");
+    if (inputDev) inputDev.addEventListener("input", renderizarTabelaDevolucoesAdmin);
+    if (selectDev) selectDev.addEventListener("change", renderizarTabelaDevolucoesAdmin);
+
+    // Ouvintes para o filtro da Tela de Reservas
+    const inputRes = document.querySelector("#tela-reservas .search-input");
+    const selectRes = document.querySelector("#tela-reservas .select-filter");
+    if (inputRes) inputRes.addEventListener("input", renderizarTabelaReservasAdmin);
+    if (selectRes) selectRes.addEventListener("change", renderizarTabelaReservasAdmin);
 });

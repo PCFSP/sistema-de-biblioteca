@@ -176,7 +176,12 @@ async function carregarEmprestimosLeitor(idTabela = "tabela-meus-emprestimos") {
 }
 
 // RENOVAÇÃO DIRETA (+7 DIAS COM MÁX: 1)
+let processandoRenovacaoLeitor = false;
+
 window.renovarEmprestimoLeitor = async function(idEmprestimo) {
+    // Bloqueia se já houver uma requisição em andamento
+    if (processandoRenovacaoLeitor) return;
+
     try {
         const docRef = doc(db, "emprestimos", idEmprestimo);
         const docSnap = await getDoc(docRef);
@@ -193,20 +198,26 @@ window.renovarEmprestimoLeitor = async function(idEmprestimo) {
         const confirmou = await confirmarAcao("Renovar Empréstimo?", "Deseja estender o prazo por mais 7 dias?", "Sim, renovar");
         if (!confirmou) return;
 
+        processandoRenovacaoLeitor = true; // Ativa a trava
+
         let dPrevista = tratarData(emp.data_devolucao_prevista);
         dPrevista.setDate(dPrevista.getDate() + 7);
 
+        // Atualiza unicamente o documento existente (sem criar novo)
         await updateDoc(docRef, {
             data_devolucao_prevista: dPrevista.toLocaleDateString('pt-BR'),
             qtdRenovacoes: qtdRenovacoes + 1
         });
 
         mostrarNotificacao("Livro renovado por mais 7 dias com sucesso!", "success");
-        carregarEmprestimosLeitor();
-        carregarPainelLeitor();
+        await carregarEmprestimosLeitor();
+        await carregarPainelLeitor();
 
     } catch (error) {
-        console.error("Erro ao renovar livro:", error);
+        console.error("Erro ao renovar livro pelo leitor:", error);
+        mostrarNotificacao("Erro ao processar a renovação.", "error");
+    } finally {
+        processandoRenovacaoLeitor = false; // Libera a trava
     }
 };
 
@@ -274,6 +285,11 @@ window.cancelarReservaLeitor = async function(idReserva) {
 // ==========================================================================
 // ABA BUSCAR LIVROS (CATÁLOGO GERAL)
 // ==========================================================================
+let livrosCatalogoCache = [];
+
+// ==========================================================================
+// ABA BUSCAR LIVROS (CARREGAMENTO E FILTRAGEM)
+// ==========================================================================
 async function listarCatalogoLivrosLeitor() {
     const tbodyBuscar = document.querySelector("#tabela-buscar-livros tbody");
     if (!tbodyBuscar) return;
@@ -322,12 +338,17 @@ async function listarCatalogoLivrosLeitor() {
             }
         });
 
-        tbodyBuscar.innerHTML = "";
+        // Monta o cache local com os estados calculados
+        livrosCatalogoCache = [];
+        const generosEncontrados = new Set();
 
         queryBooks.forEach((docSnap) => {
             const livro = docSnap.data();
             const titulo = livro.titulo || "Sem título";
             const tituloKey = titulo.trim().toLowerCase();
+            const genero = livro.categoria_idCategoria || "Geral";
+
+            generosEncontrados.add(genero);
 
             const possuiEmprestimoAtivo = meusEmprestimosAtivos.includes(tituloKey);
             const possuiSolicitacaoPendente = minhasSolicitacoesPendente.includes(tituloKey);
@@ -363,28 +384,97 @@ async function listarCatalogoLivrosLeitor() {
                 acaoHTML = `<button class="btn-primary btn-table-action" onclick="solicitarEmprestimoDireto('${titulo}')">Solicitar Empréstimo</button>`;
             }
 
-            const capaHTML = livro.capa 
-                ? `<img src="${livro.capa}" class="table-cover-img">`
-                : `<div class="table-cover-placeholder"></div>`;
-
-            const linha = `
-                <tr>
-                    <td>${capaHTML}</td>
-                    <td><strong>${titulo}</strong></td>
-                    <td>${livro.autor || "Desconhecido"}</td>
-                    <td><span class="book-tag">${livro.categoria_idCategoria || "Geral"}</span></td>
-                    <td><span class="status-tag ${statusTag}">${statusTexto}</span></td>
-                    <td>${acaoHTML}</td>
-                </tr>
-            `;
-            tbodyBuscar.insertAdjacentHTML("beforeend", linha);
+            livrosCatalogoCache.push({
+                ...livro,
+                titulo,
+                genero,
+                statusTexto,
+                statusTag,
+                acaoHTML
+            });
         });
 
-        if (typeof lucide !== "undefined") lucide.createIcons();
+        // Preenche o Select de Gêneros Dinamicamente
+        preencherSelectGenerosLeitor(Array.from(generosEncontrados));
+
+        // Renderiza a tabela aplicando os filtros atuais
+        renderizarTabelaCatalogoLeitor();
+
     } catch (error) {
         console.error("Erro ao listar catálogo:", error);
     }
 }
+
+// Preenche as opções do select de gênero no HTML sem duplicar
+function preencherSelectGenerosLeitor(generos) {
+    const selectGenero = document.querySelector("#aba-buscar .table-controls select:nth-of-type(1)");
+    if (!selectGenero) return;
+
+    const valorAtual = selectGenero.value;
+    selectGenero.innerHTML = `<option value="">Todos os Gêneros</option>`;
+    generos.sort().forEach(g => {
+        selectGenero.innerHTML += `<option value="${g}">${g}</option>`;
+    });
+    selectGenero.value = valorAtual;
+}
+
+// Função de filtragem e renderização
+function renderizarTabelaCatalogoLeitor() {
+    const tbodyBuscar = document.querySelector("#tabela-buscar-livros tbody");
+    if (!tbodyBuscar) return;
+
+    const inputBusca = document.querySelector("#aba-buscar .search-input")?.value.toLowerCase().trim() || "";
+    const filtroGenero = document.querySelector("#aba-buscar .select-filter")?.value || "";
+
+    const livrosFiltrados = livrosCatalogoCache.filter(livro => {
+        const bateTexto = (livro.titulo || "").toLowerCase().includes(inputBusca) ||
+                          (livro.autor || "").toLowerCase().includes(inputBusca) ||
+                          (livro.genero || "").toLowerCase().includes(inputBusca);
+
+        const bateGenero = !filtroGenero || livro.genero === filtroGenero;
+
+        return bateTexto && bateGenero;
+    });
+
+    tbodyBuscar.innerHTML = "";
+
+    if (livrosFiltrados.length === 0) {
+        tbodyBuscar.innerHTML = `<tr><td colspan="6" class="empty-table-row">Nenhum livro encontrado com os filtros aplicados.</td></tr>`;
+        return;
+    }
+
+    livrosFiltrados.forEach(livro => {
+        const capaHTML = livro.capa 
+            ? `<img src="${livro.capa}" class="table-cover-img">`
+            : `<div class="table-cover-placeholder"></div>`;
+
+        const linha = `
+            <tr>
+                <td>${capaHTML}</td>
+                <td><strong>${livro.titulo}</strong></td>
+                <td>${livro.autor || "Desconhecido"}</td>
+                <td><span class="book-tag">${livro.genero}</span></td>
+                <td><span class="status-tag ${livro.statusTag}">${livro.statusTexto}</span></td>
+                <td>${livro.acaoHTML}</td>
+            </tr>
+        `;
+        tbodyBuscar.insertAdjacentHTML("beforeend", linha);
+    });
+
+    if (typeof lucide !== "undefined") lucide.createIcons();
+}
+
+// Vincular os ouvintes de evento nos controles de filtro
+document.addEventListener("DOMContentLoaded", () => {
+    // Escutadores para o Leitor
+    const inputSearch = document.querySelector("#aba-buscar .search-input");
+    const selectGenero = document.querySelector("#aba-buscar .table-controls select:nth-of-type(1)");
+    const selectDisp = document.querySelector("#aba-buscar .table-controls select:nth-of-type(2)");
+
+    if (inputSearch) inputSearch.addEventListener("input", renderizarTabelaCatalogoLeitor);
+    if (selectGenero) selectGenero.addEventListener("change", renderizarTabelaCatalogoLeitor);
+    if (selectDisp) selectDisp.addEventListener("change", renderizarTabelaCatalogoLeitor);
+});
 
 // AÇÃO DE RESERVA
 window.solicitarReservaLeitor = async function(tituloLivro) {
