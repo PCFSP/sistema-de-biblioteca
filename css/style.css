@@ -1596,3 +1596,43 @@ button.avatar-circle {
     border-radius: 4px;
     object-fit: cover;
 }
+
+/* Container da capa substituta */
+.table-cover-placeholder {
+    width: 35px;
+    height: 50px;
+    border-radius: 4px;
+    background: linear-gradient(135deg, var(--primary, #3b82f6), #1d4ed8);
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset -2px 0 5px rgba(0, 0, 0, 0.2); /* Efeito de lombada de livro */
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+}
+
+/* Ícone central suave */
+.table-cover-placeholder .icon-placeholder {
+    width: 16px;
+    height: 16px;
+    opacity: 0.6;
+    margin-bottom: 2px;
+}
+
+/* Inicial do título em destaque */
+.table-cover-placeholder .cover-initial {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* Imagem da capa real para manter o padrão */
+.table-cover-img {
+    width: 35px;
+    height: 50px;
+    border-radius: 4px;
+    object-fit: cover;
+}
