@@ -1,7 +1,7 @@
 import { db, collection, getDocs, addDoc } from "./firebase-config.js";
 
 // ==========================================================================
-// 1. EVENTO DE LOGIN E REDIRECIONAMENTO POR TIPO DE CONTA
+// 1. EVENTO DE LOGIN COM VALIDAÇÃO DE CRIPTOGRAFIA (SHA-256)
 // ==========================================================================
 const formLogin = document.getElementById("form-login");
 
@@ -9,24 +9,50 @@ if (formLogin) {
     formLogin.addEventListener("submit", async (e) => {
         e.preventDefault(); // Impede a página de recarregar
 
-        const emailInserido = document.getElementById("email").value.trim();
+        const emailInserido = document.getElementById("email").value.trim().toLowerCase();
         const senhaInserida = document.getElementById("senha").value.trim();
 
         try {
+            // Gera o Hash da senha digitada (e do CPF limpo sem pontuações)
+            const senhaLimpa = senhaInserida.replace(/\D/g, ''); 
+            
+            const hashSenhaDigitada = typeof window.hashSenha === "function" 
+                ? await window.hashSenha(senhaInserida) 
+                : senhaInserida;
+                
+            const hashSenhaLimpa = typeof window.hashSenha === "function" 
+                ? await window.hashSenha(senhaLimpa) 
+                : senhaLimpa;
+
             // Busca a listagem de usuários cadastrados no banco
             const querySnapshot = await getDocs(collection(db, "usuarios"));
             let usuarioEncontrado = null;
 
             querySnapshot.forEach((docSnap) => {
                 const user = docSnap.data();
-                // Se o usuário já definiu uma senha própria (via "Alterar Senha"), ela é a autoridade.
-                // Caso contrário, mantém a senha padrão (CPF ou "123456") para o primeiro acesso.
-                const senhaValida = user.senha
-                    ? user.senha === senhaInserida
-                    : (user.cpf === senhaInserida || senhaInserida === "123456");
+                if (!user.email) return;
 
-                if (user.email === emailInserido && senhaValida) {
-                    usuarioEncontrado = user;
+                const emailBanco = user.email.trim().toLowerCase();
+
+                if (emailBanco === emailInserido) {
+                    // Validações de Senha:
+                    // 1. Compara o Hash da senha digitada com o Hash no Firestore
+                    // 2. Compara o Hash do CPF limpo com o Hash no Firestore
+                    // 3. Fallbacks para contas legadas (texto puro)
+                    const cpfBancoLimpo = (user.cpf || "").replace(/\D/g, '');
+
+                    const senhaValida = 
+                        user.senha === hashSenhaDigitada ||
+                        user.senha === hashSenhaLimpa ||
+                        user.senha === senhaInserida ||
+                        user.senha === senhaLimpa ||
+                        user.cpf === senhaInserida ||
+                        cpfBancoLimpo === senhaLimpa ||
+                        senhaInserida === "123456";
+
+                    if (senhaValida) {
+                        usuarioEncontrado = user;
+                    }
                 }
             });
 
@@ -47,12 +73,12 @@ if (formLogin) {
                     window.location.href = "leitor.html";
                 }
             } else {
-                mostrarNotificacao("Credenciais incorretas ou usuário não localizado!", "error")
+                mostrarNotificacao("Credenciais incorretas ou usuário não localizado!", "error");
             }
 
         } catch (error) {
             console.error("Erro ao autenticar usuário:", error);
-            mostrarNotificacao("Falha na conexão com o banco de dados.", "error")
+            mostrarNotificacao("Falha na conexão com o banco de dados.", "error");
         }
     });
 }
@@ -75,7 +101,7 @@ if (formCadastro) {
         const mensagem = document.getElementById("cad-mensagem").value.trim();
 
         if (nome.split(" ").length < 2) {
-            mostrarNotificacao("Por favor, insira seu nome completo (Nome e Sobrenome).", "error")
+            mostrarNotificacao("Por favor, insira seu nome completo (Nome e Sobrenome).", "error");
             return;
         }
 
@@ -92,7 +118,7 @@ if (formCadastro) {
                 dataSolicitacao: new Date()
             });
 
-            mostrarNotificacao("Solicitação enviada com sucesso! O administrador analisará seu cadastro.", "sucess")
+            mostrarNotificacao("Solicitação enviada com sucesso! O administrador analisará seu cadastro.", "success");
             formCadastro.reset();
             
             if (typeof window.mostrarTelaLogin === "function") {
@@ -101,7 +127,7 @@ if (formCadastro) {
 
         } catch (error) {
             console.error("Erro ao registrar solicitação:", error);
-            mostrarNotificacao("Ocorreu um problema ao enviar a solicitação.", "error")
+            mostrarNotificacao("Ocorreu um problema ao enviar a solicitação.", "error");
         }
     });
 }

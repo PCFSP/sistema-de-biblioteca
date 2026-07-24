@@ -25,6 +25,7 @@ function tratarData(dataBanco) {
     return isNaN(tentaData.getTime()) ? new Date() : tentaData;
 }
 
+
 // ==========================================================================
 // NAVEGAÇÃO ENTRE ABAS DO LEITOR
 // ==========================================================================
@@ -718,7 +719,7 @@ async function salvarInformacoesPerfil() {
 // Salva a nova senha (aba "Alterar Senha"), validando a senha atual da mesma forma que o login faz
 async function salvarNovaSenhaPerfil() {
     if (!PERFIL_ATUAL_ID || !PERFIL_ATUAL_DADOS) {
-        mostrarNotificacao("Não foi possível identificar seu usuário. Faça login novamente.", "error");
+        mostrarNotificacao("Não foi possível identificar seu usuário.", "error");
         return;
     }
 
@@ -735,18 +736,22 @@ async function salvarNovaSenhaPerfil() {
         return;
     }
 
-    // A mesma regra de validação usada no login: senha própria se existir, senão CPF ou "123456"
-    const senhaAtualValida = PERFIL_ATUAL_DADOS.senha
-        ? PERFIL_ATUAL_DADOS.senha === atual
-        : (PERFIL_ATUAL_DADOS.cpf === atual || atual === "123456");
+    // 1. Valida se a senha atual informada bate com o Hash do banco
+    const hashAtualDigitada = await hashSenha(atual);
+    
+    // Se ainda for primeiro acesso e o banco não tiver o hash configurado corretamente
+    const cpfLimpo = (PERFIL_ATUAL_DADOS.cpf || "").replace(/\D/g, '');
+    const isPrimeiraSenhaCpf = atual === cpfLimpo || atual === PERFIL_ATUAL_DADOS.cpf;
 
-    if (!senhaAtualValida) {
+    if (PERFIL_ATUAL_DADOS.senha !== hashAtualDigitada && !isPrimeiraSenhaCpf) {
         mostrarNotificacao("Senha atual incorreta.", "error");
         return;
     }
 
-    if (nova.length < 6) {
-        mostrarNotificacao("A nova senha deve ter pelo menos 6 caracteres.", "error");
+    // 2. Valida regras de complexidade da Nova Senha
+    const checagemComplexidade = validarComplexidadeSenha(nova);
+    if (!checagemComplexidade.valido) {
+        mostrarNotificacao(checagemComplexidade.mensagem, "warning");
         return;
     }
 
@@ -761,8 +766,16 @@ async function salvarNovaSenhaPerfil() {
     }
 
     try {
-        await updateDoc(doc(db, "usuarios", PERFIL_ATUAL_ID), { senha: nova });
-        PERFIL_ATUAL_DADOS.senha = nova;
+        // Criptografa a nova senha antes de salvar
+        const novaSenhaCriptografada = await hashSenha(nova);
+
+        await updateDoc(doc(db, "usuarios", PERFIL_ATUAL_ID), { 
+            senha: novaSenhaCriptografada,
+            trocarSenhaObrigatoria: false // Desativa o aviso obrigatório
+        });
+
+        PERFIL_ATUAL_DADOS.senha = novaSenhaCriptografada;
+        PERFIL_ATUAL_DADOS.trocarSenhaObrigatoria = false;
 
         mostrarNotificacao("Senha alterada com sucesso!", "success");
 
@@ -774,7 +787,7 @@ async function salvarNovaSenhaPerfil() {
 
     } catch (error) {
         console.error("Erro ao alterar senha:", error);
-        mostrarNotificacao("Erro ao alterar a senha.", "error");
+        mostrarNotificacao("Erro ao atualizar a senha no banco.", "error");
     }
 }
 
@@ -808,3 +821,24 @@ document.addEventListener("DOMContentLoaded", () => {
         btnSalvarPerfil.addEventListener("click", salvarPerfilLogado);
     }
 });
+
+async function verificarNotificacaoPrimeiroAcesso() {
+    if (!PERFIL_ATUAL_DADOS) return;
+
+    if (PERFIL_ATUAL_DADOS.trocarSenhaObrigatoria) {
+        // Dispara o alerta do SweetAlert2 informando a necessidade de alterar a senha inicial
+        Swal.fire({
+            icon: 'warning',
+            title: 'Sua senha é temporária!',
+            text: 'Sua senha atual é o seu CPF. Por motivos de segurança, você precisa cadastrar uma nova senha forte agora.',
+            confirmButtonText: 'Trocar Senha Agora',
+            allowOutsideClick: false,
+            allowEscapeKey: false
+        }).then(() => {
+            // Abre diretamente a aba de redefinir senha no modal de perfil
+            if (typeof window.abrirModalPerfil === "function") {
+                window.abrirModalPerfil('senha');
+            }
+        });
+    }
+}

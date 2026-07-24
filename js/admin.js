@@ -1655,13 +1655,12 @@ async function listarSolicitacoesPendentesAdmin() {
 }
 
 window.decidirSolicitacao = async function(idSolicitacao, aprovado) {
-    const titulo = aprovado ? "Aprovar Cadastro?" : "Recusar Cadastro?";
-    const mensagem = aprovado 
-        ? "O usuário receberá permissão de acesso ao sistema de biblioteca." 
-        : "A solicitação será recusada e arquivada.";
-    const botaoTexto = aprovado ? "Sim, aprovar!" : "Sim, recusar";
+    const confirmou = await confirmarAcao(
+        aprovado ? "Aprovar Cadastro?" : "Recusar Cadastro?",
+        aprovado ? "O usuário receberá permissão de acesso ao sistema." : "A solicitação será recusada e arquivada.",
+        aprovado ? "Sim, aprovar!" : "Sim, recusar"
+    );
 
-    const confirmou = await confirmarAcao(titulo, mensagem, botaoTexto);
     if (!confirmou) return;
 
     try {
@@ -1672,6 +1671,11 @@ window.decidirSolicitacao = async function(idSolicitacao, aprovado) {
         const dados = docSnap.data();
 
         if (aprovado) {
+            // Limpa o CPF para usar como senha padrão
+            const cpfLimpo = (dados.cpf || "").replace(/\D/g, '');
+            // Gera o Hash criptografado do CPF
+            const senhaCriptografada = await hashSenha(cpfLimpo);
+
             await addDoc(collection(db, "usuarios"), {
                 nome: dados.nome,
                 email: dados.email,
@@ -1680,10 +1684,13 @@ window.decidirSolicitacao = async function(idSolicitacao, aprovado) {
                 foto: dados.fotoPerfilUrl || "",
                 status: "Ativo",
                 tipoUser: "leitor",
+                senha: senhaCriptografada, // Salva HASH e não texto puro
+                trocarSenhaObrigatoria: true, // Marca aviso para trocar a senha inicial
                 dataCadastro: new Date()
             });
+
             await updateDoc(docRef, { status: "Aprovado" });
-            mostrarNotificacao(`Cadastro de ${dados.nome} aprovado!`, "success");
+            mostrarNotificacao(`Cadastro de ${dados.nome} aprovado com sucesso!`, "success");
         } else {
             await updateDoc(docRef, { status: "Recusado" });
             mostrarNotificacao("Solicitação recusada.", "info");
@@ -1694,6 +1701,7 @@ window.decidirSolicitacao = async function(idSolicitacao, aprovado) {
 
     } catch (error) {
         console.error("Erro ao processar decisão de cadastro:", error);
+        mostrarNotificacao("Erro ao processar a aprovação.", "error");
     }
 };
 

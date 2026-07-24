@@ -364,6 +364,34 @@ window.confirmarAcao = async function(titulo, texto, textoBotaoConfirmar = "Sim,
     return resultado.isConfirmed; // Retorna true se o usuário clicou em confirmar
 };
 
+// ==========================================================================
+// SEGURANÇA: CRIPTOGRAFIA DE SENHA (SHA-256) E VALIDAÇÃO DE COMPLEXIDADE
+// ==========================================================================
+
+// Gera Hash SHA-256 da senha
+window.hashSenha = async function(senha) {
+    if (!senha) return "";
+    const encoder = new TextEncoder();
+    const data = encoder.encode(senha);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+};
+
+// Valida a complexidade da senha
+window.validarComplexidadeSenha = function(senha) {
+    // Requisitos: Mínimo 8 caracteres, 1 maiúscula, 1 minúscula, 1 número e 1 caractere especial
+    const regexComplexidade = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#._\-])[A-Za-z\d@$!%*?&#._\-]{8,}$/;
+    
+    if (!regexComplexidade.test(senha)) {
+        return {
+            valido: false,
+            mensagem: "A nova senha deve ter no mínimo 8 caracteres, incluindo pelo menos uma letra maiúscula, uma minúscula, um número e um caractere especial (@, !, #, $, etc.)."
+        };
+    }
+    return { valido: true };
+};
+
 // Tornar funções acessíveis globalmente pelas tags onclick do HTML
 window.efetuarLogout = efetuarLogout;
 window.navegar = navegar;
